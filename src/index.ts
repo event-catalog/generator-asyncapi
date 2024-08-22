@@ -10,5 +10,4 @@ export default (config: any, options: Props) => {
   // }
 
   console.log('process.env.PROJECT_DIR', process.env.PROJECT_DIR);
-
 };
