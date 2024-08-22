@@ -1,0 +1,32 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    if: github.repository == 'event-catalog/sdk'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 20.x
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      - name: Installation
+        run: pnpm install
+      - name: Build
+        run: pnpm run build
+      - name: Create Release Pull Request or Publish to npm
+        uses: changesets/action@master
+        with:
+          publish: pnpm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

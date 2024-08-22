@@ -1,0 +1,23 @@
+# Make sure the EventCatalog SDK OK
+name: Verify Build
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  build:
+    name: Verify Build
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+      - name: Installation
+        run: pnpm i
+      - name: Build
+        run: pnpm run build

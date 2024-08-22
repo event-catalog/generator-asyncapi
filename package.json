@@ -1,0 +1,43 @@
+{
+  "name": "@eventcatalogtest/generator-asyncapi",
+  "version": "0.0.0",
+  "description": "AsyncAPI generator for EventCatalog",
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest",
+    "format": "prettier --write .",
+    "format:diff": "prettier --list-different .",
+    "changeset": "changeset",
+    "release": "changeset publish"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/lodash": "^4.17.7",
+    "@types/node": "^20.14.10",
+    "prettier": "^3.3.3",
+    "tsup": "^8.1.0",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.2"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@changesets/cli": "^2.27.7",
+    "@eventcatalog/sdk": "^0.0.9",
+    "fs-extra": "^11.2.0",
+    "glob": "^11.0.0",
+    "gray-matter": "^4.0.3",
+    "lodash": "^4.17.21"
+  }
+}
