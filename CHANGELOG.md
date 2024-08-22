@@ -1,5 +1,12 @@
 # @eventcatalog/sdk
 
+## 0.0.1
+
+### Patch Changes
+
+- 6e831f6: test
+- c6e2991: fixing deployment
+
 ## 0.0.7
 
 ### Patch Changes
