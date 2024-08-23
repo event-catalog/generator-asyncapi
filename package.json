@@ -19,7 +19,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/lodash": "^4.17.7",
-    "@types/node": "^20.14.10",
+    "@types/node": "^20.16.1",
     "prettier": "^3.3.3",
     "tsup": "^8.1.0",
     "typescript": "^5.5.3",
@@ -33,11 +33,13 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@asyncapi/parser": "^3.2.2",
     "@changesets/cli": "^2.27.7",
-    "@eventcatalog/sdk": "^0.0.9",
+    "@eventcatalog/sdk": "^0.0.12",
     "fs-extra": "^11.2.0",
     "glob": "^11.0.0",
     "gray-matter": "^4.0.3",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "slugify": "^1.6.6"
   }
 }
