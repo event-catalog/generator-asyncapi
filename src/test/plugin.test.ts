@@ -1,4 +1,4 @@
-import { expect, it, describe, beforeEach, afterEach } from 'vitest';
+import { expect, it, describe, beforeEach, afterEach, onTestFailed } from 'vitest';
 import utils from '@eventcatalog/sdk';
 import plugin from '../index';
 import { join } from 'node:path';
@@ -22,7 +22,30 @@ describe('AsyncAPI EventCatalog Plugin', () => {
     });
 
     describe('domains', () => {
-      it('if a domain is defined in the AsyncAPI plugin configuration and that domain exists it is added to that domain', async () => {
+      it('if a domain is defined in the AsyncAPI file but the versions do not match, the existing domain is version and a new one is created', async () => {
+        const { writeDomain, getDomain } = utils(catalogDir);
+
+        await writeDomain({
+          id: 'orders',
+          name: 'Orders Domain',
+          version: '0.0.1',
+          markdown: '',
+        });
+
+        await plugin(config, {
+          path: join(asyncAPIExamplesDir, 'simple.yml'),
+          domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
+        });
+
+        const versionedDomain = await getDomain('orders', '0.0.1');
+        const newDomain = await getDomain('orders', '1.0.0');
+
+        expect(versionedDomain.version).toEqual('0.0.1');
+        expect(newDomain.version).toEqual('1.0.0');
+        expect(newDomain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
+      });
+
+      it('if a domain is defined in the AsyncAPI plugin configuration and that domain exists the AsyncAPI Service is added to that domain', async () => {
         const { writeDomain, getDomain } = utils(catalogDir);
 
         await writeDomain({
@@ -39,6 +62,23 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const domain = await getDomain('orders', '1.0.0');
         expect(domain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
+      });
+
+      it('if multiple asyncapi files are processed, they are all added to the domain', async () => {
+        const { getDomain } = utils(catalogDir);
+
+        await plugin(config, {
+          path: [join(asyncAPIExamplesDir, 'simple.yml'), join(asyncAPIExamplesDir, 'orders-service.yml')],
+          domain: { id: 'orders', name: 'Orders', version: '1.0.0' },
+        });
+
+        const domain = await getDomain('orders', 'latest');
+
+        expect(domain.services).toHaveLength(2);
+        expect(domain.services).toEqual([
+          { id: 'account-service', version: '1.0.0' },
+          { id: 'orders-service', version: '1.0.1' },
+        ]);
       });
 
       it('if a domain is defined in the AsyncAPI plugin configuration and that domain does not exist, it is created', async () => {
@@ -72,7 +112,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const service = await getService('account-service');
 
-        console.log(service.badges);
+        console.log(service);
 
         expect(service).toEqual(
           expect.objectContaining({
@@ -197,7 +237,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(newService).toBeDefined();
       });
 
-      it('any message with the operation `send` is added to the service. The service produces this message.', async () => {
+      it('any message with the operation `send` is added to the service. The service publishes this message.', async () => {
         const { getService } = utils(catalogDir);
 
         await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
@@ -211,7 +251,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         ]);
       });
 
-      it('any message with the operation `receive` is added to the service. The service consumes this message.', async () => {
+      it('any message with the operation `receive` is added to the service. The service receives this message.', async () => {
         const { getService } = utils(catalogDir);
 
         await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
@@ -220,6 +260,18 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         expect(service.receives).toHaveLength(1);
         expect(service.receives).toEqual([{ id: 'signupuser', version: '1.0.0' }]);
+      });
+
+      it('the asyncapi file is added to the service which can be downloaded in eventcatalog', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.yml'));
+        expect(schema).toBeDefined();
       });
     });
 
@@ -353,6 +405,15 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
           const schema = await fs.readFile(join(catalogDir, 'events', 'UserSignedUp', 'schema.json'));
           expect(schema).toBeDefined();
+        });
+
+        it('when a message has a schema defined in the AsyncAPI file, the schema download is enabled in EventCatalog', async () => {
+          const { getEvent } = utils(catalogDir);
+
+          await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+          const event = await getEvent('usersignedup', '1.0.0');
+
+          expect(event.schemaPath).toEqual('schema.json');
         });
       });
     });
