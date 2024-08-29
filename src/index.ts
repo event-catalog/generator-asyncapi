@@ -127,7 +127,6 @@ export default async (config: any, options: Props) => {
     // Find events/commands
     for (const operation of operations) {
       for (const message of operation.messages()) {
-
         const eventType = message.extensions().get('x-eventcatalog-message-type')?.value() || 'event';
 
         const messageId = message.id().toLowerCase();
