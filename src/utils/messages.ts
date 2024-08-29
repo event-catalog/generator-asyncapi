@@ -1,9 +1,19 @@
 import { MessageInterface, AsyncAPIDocumentInterface } from '@asyncapi/parser';
+import { getFileExtentionFromSchemaFormat } from './schemas';
 
 export const defaultMarkdown = (document: AsyncAPIDocumentInterface, message: MessageInterface) => {
   return `
 ## Architecture
 <NodeGraph />
+
+${
+  messageHasSchema(message)
+    ? `
+## Schema
+<SchemaViewer file="${getSchemaFileName(message)}" title="Message Schema" maxHeight="500" />
+`
+    : ''
+}
 
 ${
   message.externalDocs()
@@ -28,4 +38,17 @@ export const getSummary = (message: MessageInterface) => {
   }
 
   return eventCatalogMessageSummary;
+};
+
+export const messageHasSchema = (message: MessageInterface) => {
+  return message.hasPayload() && message.schemaFormat();
+};
+
+export const getSchemaFileName = (message: MessageInterface) => {
+  const extension = getFileExtentionFromSchemaFormat(message.schemaFormat());
+  return `schema.${extension}`;
+};
+
+export const getMessageName = (message: MessageInterface) => {
+  return message.hasTitle() && message.title() ? (message.title() as string) : message.id();
 };

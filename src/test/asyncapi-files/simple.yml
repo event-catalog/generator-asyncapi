@@ -48,6 +48,7 @@ components:
   messages:
     UserSignedUp:
       description: 'User signed up the application'
+      x-eventcatalog-message-type: event
       tags:
         - name: 'New'
           description: 'New event'
@@ -85,15 +86,10 @@ components:
             description: Email of the user
     SignUpUser:
       description: 'Sign up a user'
+      x-eventcatalog-message-type: command
       tags:
         - name: 'New'
           description: 'New event'
-      headers:
-        type: object
-        properties:
-          ec-message-type:
-            type: string
-            default: command
       payload:
         type: object
         properties:

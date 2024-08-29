@@ -1,22 +1,32 @@
 // import utils from '@eventcatalog/sdk';
-import { MessageInterface, Parser } from '@asyncapi/parser';
+import { Parser } from '@asyncapi/parser';
 const parser = new Parser();
 import { readFile } from 'node:fs/promises';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
-import { defaultMarkdown as generateMarkdownForMessage, getSummary as getMessageSummary } from './utils/messages';
+import {
+  defaultMarkdown as generateMarkdownForMessage,
+  getMessageName,
+  getSummary as getMessageSummary,
+  getSchemaFileName,
+  messageHasSchema,
+} from './utils/messages';
 import { defaultMarkdown as generateMarkdownForService, getSummary as getServiceSummary } from './utils/services';
 import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
-import { getFileExtentionFromSchemaFormat } from './utils/schemas';
+import chalk from 'chalk';
+
+let metrics = { eventsCreated: 0, commandsCreated: 0, servicesCreated: 0, domainsCreated: 0 };
 
 type Domain = {
   id: string;
   name: string;
+  version: string;
 };
 
 type Props = {
   path: string | string[];
   domain?: Domain;
+  debug?: boolean;
 };
 
 export default async (config: any, options: Props) => {
@@ -42,17 +52,28 @@ export default async (config: any, options: Props) => {
     versionEvent,
     addSchemaToCommand,
     addSchemaToEvent,
+    addFileToService,
     versionDomain,
   } = utils(process.env.PROJECT_DIR);
 
   const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
 
+  console.log(chalk.green(`Processing ${asyncAPIFiles.length} AsyncAPI files...`));
+
   for (const path of asyncAPIFiles) {
+    console.log(chalk.gray(`Processing ${path}`));
+
     const asyncAPIFile = await readFile(path, 'utf-8');
     const { document } = await parser.parse(asyncAPIFile);
 
     if (!document) {
-      console.log('FAILED ASYNCAPI FILE');
+      console.log(chalk.red('Failed to parse AsyncAPI file'));
+      if (options.debug) {
+        const diagnostics = await parser.validate(asyncAPIFile);
+        console.log(diagnostics);
+      } else {
+        console.log(chalk.red('Run with debug option in the generator to see diagnostics'));
+      }
       continue;
     }
 
@@ -71,35 +92,43 @@ export default async (config: any, options: Props) => {
     // Manage domain
     if (options.domain) {
       // Try and get the domain
-      const domain = await getDomain(options.domain.id, version || 'latest');
+      const { id: domainId, name: domainName, version: domainVersion } = options.domain;
+      const domain = await getDomain(options.domain.id, domainVersion || 'latest');
       const currentDomain = await getDomain(options.domain.id, 'latest');
-      const { id: domainId, name: domainName } = options.domain;
+
+      console.log(chalk.blue(`\nProcessing domain: ${domainName} (v${domainVersion})`));
 
       // Found a domain, but the versions do not match
-      if (currentDomain && currentDomain.version !== version) {
+      if (currentDomain && currentDomain.version !== domainVersion) {
         await versionDomain(domainId);
+        console.log(chalk.cyan(` - Versioned previous domain (v${currentDomain.version})`));
       }
 
       // Do we need to create a new domain?
-      if (!domain || (domain && domain.version !== version)) {
+      if (!domain || (domain && domain.version !== domainVersion)) {
         await writeDomain({
           id: domainId,
           name: domainName,
-          version,
+          version: domainVersion,
           markdown: generateMarkdownForDomain(document),
-          services: [{ id: serviceId, version: version }],
+          // services: [{ id: serviceId, version: version }],
         });
+        console.log(chalk.cyan(` - Domain (v${domainVersion}) created`));
+      }
+
+      if (currentDomain && currentDomain.version === domainVersion) {
+        console.log(chalk.yellow(` - Domain (v${domainVersion}) already exists, skipped creation...`));
       }
 
       // Add the service to the domain
-      await addServiceToDomain(domainId, { id: serviceId, version: version }, version);
+      await addServiceToDomain(domainId, { id: serviceId, version: version }, domainVersion);
     }
 
     // Find events/commands
     for (const operation of operations) {
       for (const message of operation.messages()) {
-        // Is the message an event, query or command (default to event)
-        const eventType = message.headers()?.property('ec-message-type')?.default() || 'event';
+
+        const eventType = message.extensions().get('x-eventcatalog-message-type')?.value() || 'event';
 
         const messageId = message.id().toLowerCase();
 
@@ -114,6 +143,8 @@ export default async (config: any, options: Props) => {
         // Check if the message already exists in the catalog
         const catalogedMessage = await getMessage(message.id().toLowerCase(), 'latest');
 
+        console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${version})`));
+
         if (catalogedMessage) {
           messageMarkdown = catalogedMessage.markdown;
           // if the version matches, we can override the message but keep markdown as it  was
@@ -122,6 +153,7 @@ export default async (config: any, options: Props) => {
           } else {
             // if the version does not match, we need to version the message
             await versionMessage(messageId);
+            console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
           }
         }
 
@@ -130,35 +162,38 @@ export default async (config: any, options: Props) => {
           {
             id: messageId,
             version: version,
-            name: message.hasTitle() && message.title() ? (message.title() as string) : message.id(),
+            name: getMessageName(message),
             summary: getMessageSummary(message),
             markdown: messageMarkdown,
             badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
+            schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
           },
           {
             path: message.id(),
           }
         );
 
+        console.log(chalk.cyan(` - Message (v${version}) created`));
+
         // Check if the message has a payload, if it does then document in EventCatalog
-        if (message.hasPayload() && message.schemaFormat()) {
-          const extension = getFileExtentionFromSchemaFormat(message.schemaFormat());
+        if (messageHasSchema(message)) {
           addSchemaToMessage(
             messageId,
             {
-              fileName: `schema.${extension}`,
+              fileName: getSchemaFileName(message),
               schema: JSON.stringify(message.payload()?.json(), null, 4),
             },
             version
           );
+          console.log(chalk.cyan(` - Schema added to message (v${version})`));
         }
 
         // Add the message to the correct array
         if (operation.action() === 'send' || operation.action() === 'publish') {
-          receives.push({ id: messageId, version: version });
+          sends.push({ id: messageId, version: version });
         }
         if (operation.action() === 'receive' || operation.action() === 'subscribe') {
-          sends.push({ id: messageId, version: version });
+          receives.push({ id: messageId, version: version });
         }
       }
     }
@@ -166,11 +201,14 @@ export default async (config: any, options: Props) => {
     // Check if service is already defined... if the versions do not match then create service.
     const latestServiceInCatalog = await getService(serviceId, 'latest');
 
+    console.log(chalk.blue(`Processing service: ${document.info().title()} (v${version})`));
+
     if (latestServiceInCatalog) {
       serviceMarkdown = latestServiceInCatalog.markdown;
       // Found a service, and versions do not match, we need to version the one already there
       if (latestServiceInCatalog.version !== version) {
         await versionService(serviceId);
+        console.log(chalk.cyan(` - Versioned previous service (v${latestServiceInCatalog.version})`));
       }
 
       // Match found, override it
@@ -189,9 +227,23 @@ export default async (config: any, options: Props) => {
         badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
         markdown: serviceMarkdown,
         sends,
+        schemaPath: path.split('/').pop() || 'asyncapi.yml',
         receives,
       },
       { path: document.info().title() }
     );
+
+    await addFileToService(
+      serviceId,
+      {
+        fileName: path.split('/').pop() || 'asyncapi.yml',
+        content: asyncAPIFile,
+      },
+      version
+    );
+
+    console.log(chalk.cyan(` - Service (v${version}) created`));
+
+    console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${document.info().title()} (v${version})`));
   }
 };
