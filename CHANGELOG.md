@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.0.3
+
+### Patch Changes
+
+- 4e5acb3: chore(plugin): fixing chalk version
+
 ## 0.0.2
 
 ### Patch Changes
