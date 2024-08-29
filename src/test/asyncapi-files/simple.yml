@@ -3,6 +3,10 @@ info:
   title: Account Service
   version: 1.0.0
   description: This service is in charge of processing user signups
+  contact:
+    name: Awesome Team
+    url: https://example.com
+    email: support@asyncapi.org
   tags:
     - name: Events
       description: APIs related to event streaming

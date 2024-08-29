@@ -1,32 +1,22 @@
 // import utils from '@eventcatalog/sdk';
-import { Parser } from '@asyncapi/parser';
+import { MessageInterface, Parser } from '@asyncapi/parser';
 const parser = new Parser();
 import { readFile } from 'node:fs/promises';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
-import { defaultMarkdown as generateMarkdownForMessage } from './markdown/messages';
-import { defaultMarkdown as generateMarkdownForService } from './markdown/services';
+import { defaultMarkdown as generateMarkdownForMessage, getSummary as getMessageSummary } from './utils/messages';
+import { defaultMarkdown as generateMarkdownForService, getSummary as getServiceSummary } from './utils/services';
+import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
+import { getFileExtentionFromSchemaFormat } from './utils/schemas';
 
 type Domain = {
   id: string;
   name: string;
-  version: string;
 };
 
 type Props = {
   path: string | string[];
   domain?: Domain;
-};
-
-const getFileExtentionFromSchemaFormat = (format: string | undefined = '') => {
-  if (format.includes('avro')) return 'avsc';
-  if (format.includes('yml')) return 'yml';
-  if (format.includes('json')) return 'json';
-  if (format.includes('openapi')) return 'openapi';
-  if (format.includes('protobuf')) return 'protobuf';
-  if (format.includes('yaml')) return 'yaml';
-
-  return 'json';
 };
 
 export default async (config: any, options: Props) => {
@@ -47,10 +37,12 @@ export default async (config: any, options: Props) => {
     getCommand,
     getEvent,
     rmEventById,
+    rmCommandById,
     versionCommand,
     versionEvent,
     addSchemaToCommand,
     addSchemaToEvent,
+    versionDomain,
   } = utils(process.env.PROJECT_DIR);
 
   const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
@@ -68,7 +60,7 @@ export default async (config: any, options: Props) => {
     const documentTags = document.info().tags().all() || [];
 
     const serviceId = slugify(document.info().title(), { lower: true, strict: true });
-    const serviceVersion = document.info().version();
+    const version = document.info().version();
 
     // What messages does this service send and receive
     const sends = [];
@@ -79,20 +71,28 @@ export default async (config: any, options: Props) => {
     // Manage domain
     if (options.domain) {
       // Try and get the domain
-      const domain = await getDomain(options.domain.id, options.domain.version || 'latest');
-      const { id: domainId, name: domainName, version: domainVersion } = options.domain;
-      if (!domain) {
-        // Domain does not exist, create it
+      const domain = await getDomain(options.domain.id, version || 'latest');
+      const currentDomain = await getDomain(options.domain.id, 'latest');
+      const { id: domainId, name: domainName } = options.domain;
+
+      // Found a domain, but the versions do not match
+      if (currentDomain && currentDomain.version !== version) {
+        await versionDomain(domainId);
+      }
+
+      // Do we need to create a new domain?
+      if (!domain || (domain && domain.version !== version)) {
         await writeDomain({
           id: domainId,
           name: domainName,
-          version: domainVersion,
-          markdown: '',
-          services: [{ id: serviceId, version: serviceVersion }],
+          version,
+          markdown: generateMarkdownForDomain(document),
+          services: [{ id: serviceId, version: version }],
         });
-      } else {
-        await addServiceToDomain(domainId, { id: serviceId, version: serviceVersion }, domainVersion);
       }
+
+      // Add the service to the domain
+      await addServiceToDomain(domainId, { id: serviceId, version: version }, version);
     }
 
     // Find events/commands
@@ -107,6 +107,7 @@ export default async (config: any, options: Props) => {
         const writeMessage = eventType === 'event' ? writeEvent : writeCommand;
         const versionMessage = eventType === 'event' ? versionEvent : versionCommand;
         const getMessage = eventType === 'event' ? getEvent : getCommand;
+        const rmMessageById = eventType === 'event' ? rmEventById : rmCommandById;
         const addSchemaToMessage = eventType === 'event' ? addSchemaToEvent : addSchemaToCommand;
         const badges = message.tags().all() || [];
 
@@ -116,8 +117,8 @@ export default async (config: any, options: Props) => {
         if (catalogedMessage) {
           messageMarkdown = catalogedMessage.markdown;
           // if the version matches, we can override the message but keep markdown as it  was
-          if (catalogedMessage.version === serviceVersion) {
-            await rmEventById(messageId, serviceVersion);
+          if (catalogedMessage.version === version) {
+            await rmMessageById(messageId, version);
           } else {
             // if the version does not match, we need to version the message
             await versionMessage(messageId);
@@ -128,9 +129,9 @@ export default async (config: any, options: Props) => {
         await writeMessage(
           {
             id: messageId,
-            version: serviceVersion,
-            name: message.id(),
-            summary: message.hasDescription() ? message.description() : '',
+            version: version,
+            name: message.hasTitle() && message.title() ? (message.title() as string) : message.id(),
+            summary: getMessageSummary(message),
             markdown: messageMarkdown,
             badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
           },
@@ -148,16 +149,16 @@ export default async (config: any, options: Props) => {
               fileName: `schema.${extension}`,
               schema: JSON.stringify(message.payload()?.json(), null, 4),
             },
-            serviceVersion
+            version
           );
         }
 
         // Add the message to the correct array
         if (operation.action() === 'send' || operation.action() === 'publish') {
-          sends.push({ id: messageId, version: serviceVersion });
+          receives.push({ id: messageId, version: version });
         }
         if (operation.action() === 'receive' || operation.action() === 'subscribe') {
-          receives.push({ id: messageId, version: serviceVersion });
+          sends.push({ id: messageId, version: version });
         }
       }
     }
@@ -165,23 +166,26 @@ export default async (config: any, options: Props) => {
     // Check if service is already defined... if the versions do not match then create service.
     const latestServiceInCatalog = await getService(serviceId, 'latest');
 
-    // Found a service, and versions do not match, we need to version the one already there
-    if (latestServiceInCatalog && latestServiceInCatalog.version !== serviceVersion) {
-      await versionService(serviceId);
-    }
-
-    // Match found, override it
-    if (latestServiceInCatalog && latestServiceInCatalog.version === serviceVersion) {
+    if (latestServiceInCatalog) {
       serviceMarkdown = latestServiceInCatalog.markdown;
-      await rmService(document.info().title());
+      // Found a service, and versions do not match, we need to version the one already there
+      if (latestServiceInCatalog.version !== version) {
+        await versionService(serviceId);
+      }
+
+      // Match found, override it
+      if (latestServiceInCatalog.version === version) {
+        serviceMarkdown = latestServiceInCatalog.markdown;
+        await rmService(document.info().title());
+      }
     }
 
     await writeService(
       {
         id: serviceId,
         name: document.info().title(),
-        version: serviceVersion,
-        summary: document.info().hasDescription() ? document.info().description() : '',
+        version: version,
+        summary: getServiceSummary(document),
         badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
         markdown: serviceMarkdown,
         sends,
