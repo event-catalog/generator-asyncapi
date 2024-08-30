@@ -30,7 +30,7 @@
 
 # How it works
 
-EventCatalog is technology agnostic, meaning it can integrate with any schemas, specs or brokers.
+[EventCatalog](https://www.eventcatalog.dev/) is technology agnostic, meaning it can integrate with any schemas, specs or brokers.
 
 EventCatalog supports [generators](https://www.eventcatalog.dev/docs/development/plugins/generators).
 Generators are scripts are run to pre build to generate content in your catalog. Generators can use the [EventCatalog SDK](https://www.eventcatalog.dev/docs/sdk).
