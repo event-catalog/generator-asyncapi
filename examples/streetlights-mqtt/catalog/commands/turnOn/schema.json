@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "properties": {
+        "command": {
+            "type": "string",
+            "enum": [
+                "on",
+                "off"
+            ],
+            "description": "Whether to turn on or off the light.",
+            "x-parser-schema-id": "<anonymous-schema-13>"
+        },
+        "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time when the message was sent.",
+            "x-parser-schema-id": "<anonymous-schema-14>"
+        }
+    },
+    "x-parser-schema-id": "<anonymous-schema-12>"
+}

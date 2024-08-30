@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "properties": {
+        "percentage": {
+            "type": "integer",
+            "description": "Percentage to which the light should be dimmed to.",
+            "minimum": 0,
+            "maximum": 100,
+            "x-parser-schema-id": "<anonymous-schema-21>"
+        },
+        "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time when the message was sent.",
+            "x-parser-schema-id": "<anonymous-schema-22>"
+        }
+    },
+    "x-parser-schema-id": "<anonymous-schema-20>"
+}
