@@ -4,13 +4,11 @@
 
 [![PRs Welcome][prs-badge]][prs]
 <img src="https://img.shields.io/github/actions/workflow/status/event-catalog/generator-asyncapi/verify-build.yml"/>
-[![](https://dcbadge.limes.pink/api/server/https://discord.gg/3rjaZMmrAm?style=flat)](https://discord.gg/3rjaZMmrAm) [<img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" height="20px" />](https://www.linkedin.com/in/david-boyne/) [![blog](https://img.shields.io/badge/blog-EDA--Visuals-brightgreen)](https://eda-visuals.boyney.io/?utm_source=event-catalog-gihub) 
-
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/3rjaZMmrAm?style=flat)](https://discord.gg/3rjaZMmrAm) [<img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" height="20px" />](https://www.linkedin.com/in/david-boyne/) [![blog](https://img.shields.io/badge/blog-EDA--Visuals-brightgreen)](https://eda-visuals.boyney.io/?utm_source=event-catalog-gihub)
 
 <img alt="header" src="./images/asyncapi.jpeg" />
 
 <h4>Features: Generate EventCatalogs with your AsyncAPI files, Auto versioning, schema downloads, map to domains, custom AsyncAPI extensions and more... </h4>
-
 
 [Read the Docs](https://eventcatalog.dev/) | [Edit the Docs](https://github.com/event-catalog/docs) | [View Demo](https://demo.eventcatalog.dev/docs)
 
@@ -61,7 +59,7 @@ You can see an example in the [eventcatalog-asyncapi-example](https://github.com
 
 _Make sure you are on the latest version of EventCatalog_.
 
-1. Install the package 
+1. Install the package
 
 ```sh
 @eventcatalog/generator-asyncapi
@@ -69,13 +67,13 @@ _Make sure you are on the latest version of EventCatalog_.
 
 2. Configure your `eventcatalog.config.js` file [(see example)](https://github.com/event-catalog/eventcatalog-asyncapi-example/blob/main/eventcatalog.config.js)
 
-3. Run the generate command 
+3. Run the generate command
 
 ```sh
 npm run generate
 ```
 
-4. See your new domains, services and messages, run 
+4. See your new domains, services and messages, run
 
 ```sh
 npm run dev
@@ -84,7 +82,6 @@ npm run dev
 ## Found a problem?
 
 Raise a GitHub issue on this project, or contact us on [our Discord server](https://discord.gg/3rjaZMmrAm).
-
 
 # Sponsors
 
@@ -108,7 +105,6 @@ Interested in collaborating with us? Our offerings include dedicated support, pr
 
 Find more details on our [services page](https://eventcatalog.dev/services).
 
-
 # Contributing
 
 If you have any questions, features or issues please raise any issue or pull requests you like. We will try my best to get back to you.
@@ -131,6 +127,6 @@ You can find the [contributing guidelines here](https://eventcatalog.dev/docs/co
 [github-star-badge]: https://img.shields.io/github/stars/event-catalog/eventcatalog.svg?style=social
 [github-star]: https://github.com/event-catalog/eventcatalog/stargazers
 
-# License
+# Commercial Use
 
-TODO
+This project is governed by the [AGPL-3.0](/LICENSE.md) copyleft license. To ensure the sustainability of the project, you can freely make use of this software as long the outcome is distributed under the same license. Otherwise, you must obtain a [commercial license](./LICENSE-COMMERCIAL.md) that removes such restrictions.
