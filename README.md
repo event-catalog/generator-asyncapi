@@ -61,13 +61,25 @@ You can see an example in the [eventcatalog-asyncapi-example](https://github.com
 
 _Make sure you are on the latest version of EventCatalog_.
 
-1. Install the package `@eventcatalog/generator-asyncapi`
+1. Install the package 
+
+```sh
+@eventcatalog/generator-asyncapi
+```
 
 2. Configure your `eventcatalog.config.js` file [(see example)](https://github.com/event-catalog/eventcatalog-asyncapi-example/blob/main/eventcatalog.config.js)
 
-3. Run the generate command `npm run generate`
+3. Run the generate command 
 
-4. See your new domains, services and messages, run `npm run dev`
+```sh
+npm run generate
+```
+
+4. See your new domains, services and messages, run 
+
+```sh
+npm run dev
+```
 
 ## Found a problem?
 
