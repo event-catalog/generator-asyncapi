@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.0.2
+
+### Patch Changes
+
+- c691069: chore(plugin): release
+
 ## 0.0.3
 
 ### Patch Changes
