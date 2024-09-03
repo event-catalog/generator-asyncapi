@@ -1,6 +1,4 @@
-import { AsyncAPIDocumentInterface } from '@asyncapi/parser';
-
-export const defaultMarkdown = (document: AsyncAPIDocumentInterface) => {
+export const defaultMarkdown = () => {
   return `
 
 ## Architecture diagram
