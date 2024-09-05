@@ -11,8 +11,9 @@ import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
 import { defaultMarkdown as generateMarkdownForService, getSummary as getServiceSummary } from './utils/services';
 import { defaultMarkdown as generateMarkdownForMessage, getSummary as getMessageSummary } from './utils/messages';
 
-import { OpenAPI, OpenAPIV3_1 } from 'openapi-types';
+import { OpenAPIV3_1 } from 'openapi-types';
 import { getMessageName } from './utils/messages';
+import checkLicense from './checkLicense';
 
 type Props = {
   path: string | string[];
@@ -266,4 +267,6 @@ export default async (config: any, options: Props) => {
 
     console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${document.info.title} (v${version})`));
   }
+
+  await checkLicense();
 };

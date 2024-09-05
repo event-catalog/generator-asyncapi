@@ -129,4 +129,4 @@ You can find the [contributing guidelines here](https://eventcatalog.dev/docs/co
 
 # Commercial Use
 
-This project is governed by the [AGPL-3.0](/LICENSE.md) copyleft license. To ensure the sustainability of the project, you can freely make use of this software as long the outcome is distributed under the same license. Otherwise, you must obtain a [commercial license](./LICENSE-COMMERCIAL.md) that removes such restrictions.
+This project is governed by a [dual-license](./LICENSE.md). To ensure the sustainability of the project, you can freely make use of this software if your projects are Open Source. Otherwise for proprietary systems you must obtain a [commercial license](./LICENSE-COMMERCIAL.md).
