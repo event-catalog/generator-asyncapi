@@ -130,3 +130,5 @@ You can find the [contributing guidelines here](https://eventcatalog.dev/docs/co
 # Commercial Use
 
 This project is governed by a [dual-license](./LICENSE.md). To ensure the sustainability of the project, you can freely make use of this software if your projects are Open Source. Otherwise for proprietary systems you must obtain a [commercial license](./LICENSE-COMMERCIAL.md).
+
+To obtain a commercial license or have any questions you can email us at `hello@eventcatalog.dev`.
