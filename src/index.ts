@@ -269,5 +269,4 @@ export default async (config: any, options: Props) => {
   }
 
   await checkLicense();
-
 };
