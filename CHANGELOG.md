@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.0.3
+
+### Patch Changes
+
+- d89c37d: chore(plugin): update to license
+
 ## 0.0.2
 
 ### Patch Changes
