@@ -36,7 +36,7 @@
   "dependencies": {
     "@asyncapi/parser": "^3.2.2",
     "@changesets/cli": "^2.27.7",
-    "@eventcatalog/sdk": "^0.0.12",
+    "@eventcatalog/sdk": "^0.1.1",
     "chalk": "^4",
     "fs-extra": "^11.2.0",
     "glob": "^11.0.0",
