@@ -87,6 +87,7 @@ export default async (config: any, options: Props) => {
     // What messages does this service send and receive
     const sends = [];
     const receives = [];
+    let specifications = {};
 
     let serviceMarkdown = generateMarkdownForService(document);
 
@@ -214,6 +215,7 @@ export default async (config: any, options: Props) => {
       // Match found, override it
       if (latestServiceInCatalog.version === version) {
         serviceMarkdown = latestServiceInCatalog.markdown;
+        specifications = latestServiceInCatalog.specifications ?? {};
         await rmService(document.info().title());
       }
     }
@@ -227,8 +229,11 @@ export default async (config: any, options: Props) => {
         badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
         markdown: serviceMarkdown,
         sends,
-        schemaPath: path.split('/').pop() || 'asyncapi.yml',
         receives,
+        schemaPath: path.split('/').pop() || 'asyncapi.yml',
+        specifications: { 
+          ...specifications,
+          asyncapiPath: path.split('/').pop() || 'asyncapi.yml' },
       },
       { path: document.info().title() }
     );

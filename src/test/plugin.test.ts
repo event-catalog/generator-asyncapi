@@ -273,6 +273,40 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.yml'));
         expect(schema).toBeDefined();
       });
+
+      it('the asyncapi specification file path is added to the service which can be rendered and visualized in eventcatalog', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.specifications?.asyncapiPath).toEqual('simple.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.yml'));
+        expect(schema).toBeDefined();
+      });
+
+      it('the asyncapi specification file path is added to an existing service version without overwriting existing specifications except asyncapi spec', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService, getService } = utils(catalogDir);
+        const existingVersion = '1.0.0';
+        await writeService(
+          {
+            id: 'account-service',
+            version: existingVersion,
+            name: 'Random Name',
+            markdown: 'Here is my original markdown, please do not override this!',
+            specifications: { openapiPath: 'simple.yml' },
+          },
+          { path: 'Account Service' }
+        );
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const service = await getService('account-service', existingVersion);
+        expect(service.specifications?.asyncapiPath).toEqual('simple.yml');
+        expect(service.specifications?.openapiPath).toEqual('simple.yml');
+      });
     });
 
     describe('messages', () => {
