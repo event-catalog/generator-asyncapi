@@ -231,9 +231,10 @@ export default async (config: any, options: Props) => {
         sends,
         receives,
         schemaPath: path.split('/').pop() || 'asyncapi.yml',
-        specifications: { 
+        specifications: {
           ...specifications,
-          asyncapiPath: path.split('/').pop() || 'asyncapi.yml' },
+          asyncapiPath: path.split('/').pop() || 'asyncapi.yml',
+        },
       },
       { path: document.info().title() }
     );
