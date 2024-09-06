@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.1.0
+
+### Minor Changes
+
+- 8ddd7f6: Generator will integrate automatically the specifications frontmatter for services generated
+
 ## 0.0.4
 
 ### Patch Changes
