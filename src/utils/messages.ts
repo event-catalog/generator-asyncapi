@@ -1,18 +1,25 @@
 import { MessageInterface, AsyncAPIDocumentInterface } from '@asyncapi/parser';
-import { OpenAPI } from 'openapi-types';
-import { Operation } from '..';
-// import { getFileExtentionFromSchemaFormat } from './schemas';
+import { getFileExtentionFromSchemaFormat } from './schemas';
 
-export const defaultMarkdown = (message: Operation) => {
+export const defaultMarkdown = (document: AsyncAPIDocumentInterface, message: MessageInterface) => {
   return `
 ## Architecture
 <NodeGraph />
 
 ${
-  message.externalDocs
+  messageHasSchema(message)
+    ? `
+## Schema
+<SchemaViewer file="${getSchemaFileName(message)}" title="Message Schema" maxHeight="500" />
+`
+    : ''
+}
+
+${
+  message.externalDocs()
     ? `
 ## External documentation
-- [${message.externalDocs.description}](${message.externalDocs.url})
+- [${message.externalDocs()?.description()}](${message.externalDocs()?.url()})
 `
     : ''
 }
@@ -20,9 +27,9 @@ ${
 `;
 };
 
-export const getSummary = (message: Operation) => {
-  const messageSummary = message.summary ? message.summary : '';
-  const messageDescription = message.description ? message.description : '';
+export const getSummary = (message: MessageInterface) => {
+  const messageSummary = message.hasSummary() ? message.summary() : '';
+  const messageDescription = message.hasDescription() ? message.description() : '';
 
   let eventCatalogMessageSummary = messageSummary;
 
@@ -33,15 +40,15 @@ export const getSummary = (message: Operation) => {
   return eventCatalogMessageSummary;
 };
 
-// export const messageHasSchema = (message: Operation) => {
-//   return message.hasPayload() && message.schemaFormat();
-// };
+export const messageHasSchema = (message: MessageInterface) => {
+  return message.hasPayload() && message.schemaFormat();
+};
 
-// export const getSchemaFileName = (message: Operation) => {
-//   const extension = getFileExtentionFromSchemaFormat(message.schemaFormat());
-//   return `schema.${extension}`;
-// };
+export const getSchemaFileName = (message: MessageInterface) => {
+  const extension = getFileExtentionFromSchemaFormat(message.schemaFormat());
+  return `schema.${extension}`;
+};
 
-export const getMessageName = (message: Operation) => {
-  return message.operationId;
+export const getMessageName = (message: MessageInterface) => {
+  return message.hasTitle() && message.title() ? (message.title() as string) : message.id();
 };
