@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.0.4
+
+### Patch Changes
+
+- 6f28a9a: bug(plugin): reverted back to asyncapi plugin
+
 ## 0.0.3
 
 ### Patch Changes
