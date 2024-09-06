@@ -1,25 +1,22 @@
 // import utils from '@eventcatalog/sdk';
-// import { Parser } from '@asyncapi/parser';
-// const parser = new Parser();
-import utils from '@eventcatalog/sdk';
-// import slugify from 'slugify';
+import { Parser } from '@asyncapi/parser';
+const parser = new Parser();
 import { readFile } from 'node:fs/promises';
-import chalk from 'chalk';
-import SwaggerParser from '@apidevtools/swagger-parser';
+import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
-import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
+import {
+  defaultMarkdown as generateMarkdownForMessage,
+  getMessageName,
+  getSummary as getMessageSummary,
+  getSchemaFileName,
+  messageHasSchema,
+} from './utils/messages';
 import { defaultMarkdown as generateMarkdownForService, getSummary as getServiceSummary } from './utils/services';
-import { defaultMarkdown as generateMarkdownForMessage, getSummary as getMessageSummary } from './utils/messages';
-
-import { OpenAPIV3_1 } from 'openapi-types';
-import { getMessageName } from './utils/messages';
+import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
+import chalk from 'chalk';
 import checkLicense from './checkLicense';
-
-type Props = {
-  path: string | string[];
-  domain?: Domain;
-  debug?: boolean;
-};
+import argv from 'minimist';
+const cliArgs = argv(process.argv.slice(2));
 
 type Domain = {
   id: string;
@@ -27,59 +24,11 @@ type Domain = {
   version: string;
 };
 
-const DEFAULT_MESSAGE_TYPE = 'query';
-
-export type Operation = {
-  path: string;
-  method: string;
-  operationId: string;
-  summary?: string;
-  description?: string;
-  type: string;
-  externalDocs?: OpenAPIV3_1.ExternalDocumentationObject;
-  tags: string[];
+type Props = {
+  path: string | string[];
+  domain?: Domain;
+  debug?: boolean;
 };
-
-async function getOperationsByType(openApiPath: string) {
-  try {
-    // Parse the OpenAPI document
-    const api = await SwaggerParser.validate(openApiPath);
-
-    const operations = [];
-
-    // Iterate through paths
-    for (const path in api.paths) {
-      const pathItem = api.paths[path];
-
-      // Iterate through each HTTP method in the path
-      for (const method in pathItem) {
-        // @ts-ignore
-        const openAPIOperation = pathItem[method];
-
-        // Check if the x-eventcatalog-message-type field is set
-        const messageType = openAPIOperation['x-eventcatalog-message-type'] || DEFAULT_MESSAGE_TYPE;
-
-        const operation = {
-          path: path,
-          method: method.toUpperCase(),
-          operationId: openAPIOperation.operationId,
-          externalDocs: openAPIOperation.externalDocs,
-          type: messageType,
-          description: openAPIOperation.description,
-          summary: openAPIOperation.summary,
-          tags: openAPIOperation.tags || [],
-        } as Operation;
-
-        operations.push(operation);
-      }
-    }
-
-    return operations;
-  } catch (err) {
-    console.error('Error parsing OpenAPI document:', err);
-    return [];
-  }
-}
 
 export default async (config: any, options: Props) => {
   if (!process.env.PROJECT_DIR) {
@@ -87,43 +36,58 @@ export default async (config: any, options: Props) => {
   }
 
   const {
+    writeService,
     writeEvent,
-    getDomain,
-    versionDomain,
-    writeDomain,
-    addServiceToDomain,
+    writeCommand,
     getService,
     versionService,
     rmService,
-    writeService,
-    addFileToService,
-    versionCommand,
-    getEvent,
+    getDomain,
+    writeDomain,
+    addServiceToDomain,
     getCommand,
-    rmCommandById,
+    getEvent,
     rmEventById,
-    writeCommand,
+    rmCommandById,
+    versionCommand,
+    versionEvent,
+    addSchemaToCommand,
+    addSchemaToEvent,
+    addFileToService,
+    versionDomain,
   } = utils(process.env.PROJECT_DIR);
 
-  const openAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
+  const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
 
-  for (const path of openAPIFiles) {
-    console.log(chalk.green(`Processing ${path}`));
+  console.log(chalk.green(`Processing ${asyncAPIFiles.length} AsyncAPI files...`));
 
-    try {
-      await SwaggerParser.validate(path);
-    } catch (error) {
-      console.error(chalk.red(`Failed to parse OpenAPI file: ${path}`));
-      console.error(chalk.red(error));
+  for (const path of asyncAPIFiles) {
+    console.log(chalk.gray(`Processing ${path}`));
+
+    const asyncAPIFile = await readFile(path, 'utf-8');
+    const { document } = await parser.parse(asyncAPIFile);
+
+    if (!document) {
+      console.log(chalk.red('Failed to parse AsyncAPI file'));
+      if (options.debug || cliArgs.debug) {
+        const diagnostics = await parser.validate(asyncAPIFile);
+        console.log(diagnostics);
+      } else {
+        console.log(chalk.red('Run with debug option in the generator to see diagnostics'));
+      }
       continue;
     }
 
-    const openAPIFile = await readFile(path, 'utf-8');
-    const document = await SwaggerParser.parse(path);
-    const operations = await getOperationsByType(path);
+    const operations = document.allOperations();
+    const documentTags = document.info().tags().all() || [];
 
-    const serviceId = slugify(document.info.title, { lower: true, strict: true });
-    const version = document.info.version;
+    const serviceId = slugify(document.info().title(), { lower: true, strict: true });
+    const version = document.info().version();
+
+    // What messages does this service send and receive
+    const sends = [];
+    const receives = [];
+
     let serviceMarkdown = generateMarkdownForService(document);
 
     // Manage domain
@@ -147,7 +111,8 @@ export default async (config: any, options: Props) => {
           id: domainId,
           name: domainName,
           version: domainVersion,
-          markdown: generateMarkdownForDomain(),
+          markdown: generateMarkdownForDomain(document),
+          // services: [{ id: serviceId, version: version }],
         });
         console.log(chalk.cyan(` - Domain (v${domainVersion}) created`));
       }
@@ -160,73 +125,86 @@ export default async (config: any, options: Props) => {
       await addServiceToDomain(domainId, { id: serviceId, version: version }, domainVersion);
     }
 
-    // parse
-    // const { document } = await parser.parse(asyncAPIFile);
-
-    // const operations = document.allOperations();
-    const documentTags = document.tags || [];
-
-    // // What messages does this service send and receive
-    let sends = [];
-    const receives = [];
-
+    // Find events/commands
     for (const operation of operations) {
-      const messageType = operation.type;
-      const messageId = getMessageName(operation);
-      let messageMarkdown = generateMarkdownForMessage(operation);
-      const versionMessage = versionCommand;
-      const getMessage = messageType === 'event' ? getEvent : getCommand;
-      const rmMessageById = messageType === 'event' ? rmEventById : rmCommandById;
-      const writeMessage = messageType === 'event' ? writeEvent : writeCommand;
-      // const addSchemaToMessage = messageType === 'event' ? addSchemaToEvent : addSchemaToCommand;
+      for (const message of operation.messages()) {
+        const eventType = message.extensions().get('x-eventcatalog-message-type')?.value() || 'event';
 
-      // Check if the message already exists in the catalog
-      const catalogedMessage = await getMessage(messageId, 'latest');
+        const messageId = message.id().toLowerCase();
 
-      console.log(chalk.blue(`Processing message: ${getMessageName(operation)} (v${version})`));
+        let messageMarkdown = generateMarkdownForMessage(document, message);
+        const writeMessage = eventType === 'event' ? writeEvent : writeCommand;
+        const versionMessage = eventType === 'event' ? versionEvent : versionCommand;
+        const getMessage = eventType === 'event' ? getEvent : getCommand;
+        const rmMessageById = eventType === 'event' ? rmEventById : rmCommandById;
+        const addSchemaToMessage = eventType === 'event' ? addSchemaToEvent : addSchemaToCommand;
+        const badges = message.tags().all() || [];
 
-      if (catalogedMessage) {
-        messageMarkdown = catalogedMessage.markdown;
-        // if the version matches, we can override the message but keep markdown as it  was
-        if (catalogedMessage.version === version) {
-          await rmMessageById(messageId, version);
-        } else {
-          // if the version does not match, we need to version the message
-          await versionMessage(messageId);
-          console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
+        // Check if the message already exists in the catalog
+        const catalogedMessage = await getMessage(message.id().toLowerCase(), 'latest');
+
+        console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${version})`));
+
+        if (catalogedMessage) {
+          messageMarkdown = catalogedMessage.markdown;
+          // if the version matches, we can override the message but keep markdown as it  was
+          if (catalogedMessage.version === version) {
+            await rmMessageById(messageId, version);
+          } else {
+            // if the version does not match, we need to version the message
+            await versionMessage(messageId);
+            console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
+          }
+        }
+
+        // Write the message to the catalog
+        await writeMessage(
+          {
+            id: messageId,
+            version: version,
+            name: getMessageName(message),
+            summary: getMessageSummary(message),
+            markdown: messageMarkdown,
+            badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
+            schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
+          },
+          {
+            path: message.id(),
+          }
+        );
+
+        console.log(chalk.cyan(` - Message (v${version}) created`));
+
+        // Check if the message has a payload, if it does then document in EventCatalog
+        if (messageHasSchema(message)) {
+          addSchemaToMessage(
+            messageId,
+            {
+              fileName: getSchemaFileName(message),
+              schema: JSON.stringify(message.payload()?.json(), null, 4),
+            },
+            version
+          );
+          console.log(chalk.cyan(` - Schema added to message (v${version})`));
+        }
+
+        // Add the message to the correct array
+        if (operation.action() === 'send' || operation.action() === 'publish') {
+          sends.push({ id: messageId, version: version });
+        }
+        if (operation.action() === 'receive' || operation.action() === 'subscribe') {
+          receives.push({ id: messageId, version: version });
         }
       }
-
-      await writeMessage(
-        {
-          id: messageId,
-          version: version,
-          name: getMessageName(operation),
-          summary: getMessageSummary(operation),
-          markdown: messageMarkdown,
-          badges: operation.tags.map((badge) => ({ content: badge, textColor: 'blue', backgroundColor: 'blue' })),
-        },
-        {
-          path: messageId,
-        }
-      );
-
-      // messages will always be messages the service receives
-      receives.push({
-        id: operation.operationId,
-        version: version,
-      });
-
-      console.log(chalk.cyan(` - Message (v${version}) created`));
     }
 
     // Check if service is already defined... if the versions do not match then create service.
     const latestServiceInCatalog = await getService(serviceId, 'latest');
-    console.log(chalk.blue(`Processing service: ${document.info.title} (v${version})`));
+
+    console.log(chalk.blue(`Processing service: ${document.info().title()} (v${version})`));
 
     if (latestServiceInCatalog) {
       serviceMarkdown = latestServiceInCatalog.markdown;
-      sends = latestServiceInCatalog.sends || ([] as any);
       // Found a service, and versions do not match, we need to version the one already there
       if (latestServiceInCatalog.version !== version) {
         await versionService(serviceId);
@@ -235,37 +213,38 @@ export default async (config: any, options: Props) => {
 
       // Match found, override it
       if (latestServiceInCatalog.version === version) {
-        await rmService(document.info.title);
+        serviceMarkdown = latestServiceInCatalog.markdown;
+        await rmService(document.info().title());
       }
     }
 
     await writeService(
       {
         id: serviceId,
-        name: document.info.title,
+        name: document.info().title(),
         version: version,
         summary: getServiceSummary(document),
-        badges: documentTags.map((tag) => ({ content: tag.name, textColor: 'blue', backgroundColor: 'blue' })),
+        badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
         markdown: serviceMarkdown,
         sends,
-        schemaPath: path.split('/').pop() || 'openapi.yml',
+        schemaPath: path.split('/').pop() || 'asyncapi.yml',
         receives,
       },
-      { path: document.info.title }
+      { path: document.info().title() }
     );
 
     await addFileToService(
       serviceId,
       {
-        fileName: path.split('/').pop() || 'openapi.yml',
-        content: openAPIFile,
+        fileName: path.split('/').pop() || 'asyncapi.yml',
+        content: asyncAPIFile,
       },
       version
     );
 
     console.log(chalk.cyan(` - Service (v${version}) created`));
 
-    console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${document.info.title} (v${version})`));
+    console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${document.info().title()} (v${version})`));
   }
 
   await checkLicense();

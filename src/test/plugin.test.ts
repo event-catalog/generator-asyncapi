@@ -3,56 +3,26 @@ import utils from '@eventcatalog/sdk';
 import plugin from '../index';
 import { join } from 'node:path';
 import fs from 'fs/promises';
-import { send } from 'node:process';
 
 // Fake eventcatalog config
 const config = {};
 
 let catalogDir: string;
-const openAPIExamples = join(__dirname, 'openapi-files');
+const asyncAPIExamplesDir = join(__dirname, 'asyncapi-files');
 
-describe('OpenAPI EventCatalog Plugin', () => {
-  beforeEach(() => {
-    catalogDir = join(__dirname, 'catalog') || '';
-    fs.mkdir(catalogDir, { recursive: true });
-    process.env.PROJECT_DIR = catalogDir;
-  });
-
-  afterEach(async () => {
-    await fs.rm(join(catalogDir), { recursive: true });
-  });
-
+describe('AsyncAPI EventCatalog Plugin', () => {
   describe('service generation', () => {
+    beforeEach(() => {
+      catalogDir = join(__dirname, 'catalog') || '';
+      process.env.PROJECT_DIR = catalogDir;
+    });
+
+    afterEach(async () => {
+      await fs.rm(join(catalogDir), { recursive: true });
+    });
+
     describe('domains', () => {
-      it('if a domain is defined in the OpenAPI plugin configuration and that domain does not exist, it is created', async () => {
-        const { getDomain } = utils(catalogDir);
-
-        await plugin(config, {
-          path: join(openAPIExamples, 'petstore.yml'),
-          domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
-        });
-
-        const domain = await getDomain('orders', '1.0.0');
-
-        expect(domain).toEqual(
-          expect.objectContaining({
-            id: 'orders',
-            name: 'Orders Domain',
-            version: '1.0.0',
-            services: [{ id: 'swagger-petstore', version: '1.0.0' }],
-          })
-        );
-      });
-
-      it('if a domain is not defined in the AsyncAPI plugin configuration, the service is not added to any domains', async () => {
-        const { getDomain } = utils(catalogDir);
-        await plugin(config, {
-          path: join(openAPIExamples, 'petstore.yml'),
-        });
-        expect(await getDomain('orders', '1.0.0')).toBeUndefined();
-      });
-
-      it('if a domain is defined in the OpenAPI file but the versions do not match, the existing domain is version and a new one is created', async () => {
+      it('if a domain is defined in the AsyncAPI file but the versions do not match, the existing domain is version and a new one is created', async () => {
         const { writeDomain, getDomain } = utils(catalogDir);
 
         await writeDomain({
@@ -63,7 +33,7 @@ describe('OpenAPI EventCatalog Plugin', () => {
         });
 
         await plugin(config, {
-          path: join(openAPIExamples, 'petstore.yml'),
+          path: join(asyncAPIExamplesDir, 'simple.yml'),
           domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
         });
 
@@ -72,10 +42,10 @@ describe('OpenAPI EventCatalog Plugin', () => {
 
         expect(versionedDomain.version).toEqual('0.0.1');
         expect(newDomain.version).toEqual('1.0.0');
-        expect(newDomain.services).toEqual([{ id: 'swagger-petstore', version: '1.0.0' }]);
+        expect(newDomain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
       });
 
-      it('if a domain is defined in the OpenAPI plugin configuration and that domain exists the OpenAPI Service is added to that domain', async () => {
+      it('if a domain is defined in the AsyncAPI plugin configuration and that domain exists the AsyncAPI Service is added to that domain', async () => {
         const { writeDomain, getDomain } = utils(catalogDir);
 
         await writeDomain({
@@ -86,19 +56,19 @@ describe('OpenAPI EventCatalog Plugin', () => {
         });
 
         await plugin(config, {
-          path: join(openAPIExamples, 'petstore.yml'),
+          path: join(asyncAPIExamplesDir, 'simple.yml'),
           domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
         });
 
         const domain = await getDomain('orders', '1.0.0');
-        expect(domain.services).toEqual([{ id: 'swagger-petstore', version: '1.0.0' }]);
+        expect(domain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
       });
 
-      it('if multiple OpenAPI files are processed, they are all added to the domain', async () => {
+      it('if multiple asyncapi files are processed, they are all added to the domain', async () => {
         const { getDomain } = utils(catalogDir);
 
         await plugin(config, {
-          path: [join(openAPIExamples, 'petstore.yml'), join(openAPIExamples, 'simple.yml')],
+          path: [join(asyncAPIExamplesDir, 'simple.yml'), join(asyncAPIExamplesDir, 'orders-service.yml')],
           domain: { id: 'orders', name: 'Orders', version: '1.0.0' },
         });
 
@@ -106,31 +76,58 @@ describe('OpenAPI EventCatalog Plugin', () => {
 
         expect(domain.services).toHaveLength(2);
         expect(domain.services).toEqual([
-          { id: 'swagger-petstore', version: '1.0.0' },
-          { id: 'simple-api-overview', version: '2.0.0' },
+          { id: 'account-service', version: '1.0.0' },
+          { id: 'orders-service', version: '1.0.1' },
         ]);
+      });
+
+      it('if a domain is defined in the AsyncAPI plugin configuration and that domain does not exist, it is created', async () => {
+        const { getDomain } = utils(catalogDir);
+
+        expect(await getDomain('orders', '1.0.0')).toBeUndefined();
+
+        await plugin(config, {
+          path: join(asyncAPIExamplesDir, 'simple.yml'),
+          domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
+        });
+
+        const domain = await getDomain('orders', '1.0.0');
+        expect(domain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
+      });
+
+      it('if a domain is not defined in the AsyncAPI plugin configuration, the service is not added to any domains', async () => {
+        const { getDomain } = utils(catalogDir);
+        await plugin(config, {
+          path: join(asyncAPIExamplesDir, 'simple.yml'),
+        });
+        expect(await getDomain('orders', '1.0.0')).toBeUndefined();
       });
     });
 
     describe('services', () => {
-      it('OpenAPI spec is mapped into a service in EventCatalog when no service with this name is already defined', async () => {
+      it('asyncapi is mapped into a service in EventCatalog when no service with this name is already defined', async () => {
         const { getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const service = await getService('swagger-petstore');
+        const service = await getService('account-service');
 
         console.log(service);
 
         expect(service).toEqual(
           expect.objectContaining({
-            id: 'swagger-petstore',
-            name: 'Swagger Petstore',
+            id: 'account-service',
+            name: 'Account Service',
             version: '1.0.0',
-            summary: 'This is a sample server Petstore server.',
+            summary: 'This service is in charge of processing user signups',
             badges: [
               {
-                content: 'Pets',
+                content: 'Events',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+              {
+                content: 'Authentication',
                 textColor: 'blue',
                 backgroundColor: 'blue',
               },
@@ -139,260 +136,285 @@ describe('OpenAPI EventCatalog Plugin', () => {
         );
       });
 
-      it('when the OpenaPI service is already defined in EventCatalog and the versions match, only metadata is updated', async () => {
+      it('when the AsyncAPI service is already defined in EventCatalog and the versions match, only metadata is updated', async () => {
         // Create a service with the same name and version as the AsyncAPI file for testing
         const { writeService, getService } = utils(catalogDir);
 
         await writeService(
           {
-            id: 'swagger-petstore',
+            id: 'account-service',
             version: '1.0.0',
             name: 'Random Name',
-            markdown: '# Old markdown',
-          },
-          { path: 'Swagger Petstore' }
-        );
-
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
-
-        const service = await getService('swagger-petstore', '1.0.0');
-
-        expect(service).toEqual(
-          expect.objectContaining({
-            id: 'swagger-petstore',
-            name: 'Swagger Petstore',
-            version: '1.0.0',
-            summary: 'This is a sample server Petstore server.',
-            markdown: '# Old markdown',
-            badges: [
-              {
-                content: 'Pets',
-                textColor: 'blue',
-                backgroundColor: 'blue',
-              },
-            ],
-          })
-        );
-      });
-
-      it('when the OpenAPI service is already defined in EventCatalog and the versions match, the markdown is persisted and not overwritten', async () => {
-        // Create a service with the same name and version as the AsyncAPI file for testing
-        const { writeService, getService } = utils(catalogDir);
-
-        await writeService(
-          {
-            id: 'swagger-petstore',
-            version: '1.0.0',
-            name: 'Random Name',
-            markdown: 'Here is my original markdown, please do not override this!',
-          },
-          { path: 'Swagger Petstore' }
-        );
-
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
-
-        const service = await getService('swagger-petstore', '1.0.0');
-        expect(service).toEqual(
-          expect.objectContaining({
-            id: 'swagger-petstore',
-            name: 'Swagger Petstore',
-            version: '1.0.0',
-            summary: 'This is a sample server Petstore server.',
-            markdown: 'Here is my original markdown, please do not override this!',
-            badges: [
-              {
-                content: 'Pets',
-                textColor: 'blue',
-                backgroundColor: 'blue',
-              },
-            ],
-          })
-        );
-      });
-
-      it('when the OpenAPI service is already defined in EventCatalog and the versions match, the `sends` list of messages is persisted, as the plugin does not create them', async () => {
-        // Create a service with the same name and version as the AsyncAPI file for testing
-        const { writeService, getService } = utils(catalogDir);
-
-        await writeService(
-          {
-            id: 'swagger-petstore',
-            version: '1.0.0',
-            name: 'Random Name',
-            markdown: 'Here is my original markdown, please do not override this!',
-            sends: [{ id: 'usersignedup', version: '1.0.0' }],
-          },
-          { path: 'Swagger Petstore' }
-        );
-
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
-
-        const service = await getService('swagger-petstore', '1.0.0');
-        expect(service).toEqual(
-          expect.objectContaining({
-            sends: [{ id: 'usersignedup', version: '1.0.0' }],
-          })
-        );
-      });
-
-      it('when the OpenAPI service is already defined in EventCatalog and the versions do not match, a new service is created and the old one is versioned', async () => {
-        // Create a service with the same name and version as the AsyncAPI file for testing
-        const { writeService, getService } = utils(catalogDir);
-
-        await writeService(
-          {
-            id: 'swagger-petstore',
-            version: '0.0.1',
-            name: 'Swagger Petstore',
             markdown: '',
           },
-          { path: 'Swagger Petstore' }
+          { path: 'Account Service' }
         );
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const versionedService = await getService('swagger-petstore', '0.0.1');
-        const newService = await getService('swagger-petstore', '1.0.0');
+        const service = await getService('account-service', '1.0.0');
+        expect(service).toEqual(
+          expect.objectContaining({
+            id: 'account-service',
+            name: 'Account Service',
+            version: '1.0.0',
+            summary: 'This service is in charge of processing user signups',
+            badges: [
+              {
+                content: 'Events',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+              {
+                content: 'Authentication',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
+          })
+        );
+      });
+
+      it('when the AsyncAPI service is already defined in EventCatalog and the versions match, the markdown is persisted and not overwritten', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService, getService } = utils(catalogDir);
+
+        await writeService(
+          {
+            id: 'account-service',
+            version: '1.0.0',
+            name: 'Random Name',
+            markdown: 'Here is my original markdown, please do not override this!',
+          },
+          { path: 'Account Service' }
+        );
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const service = await getService('account-service', '1.0.0');
+        expect(service).toEqual(
+          expect.objectContaining({
+            id: 'account-service',
+            name: 'Account Service',
+            version: '1.0.0',
+            summary: 'This service is in charge of processing user signups',
+            markdown: 'Here is my original markdown, please do not override this!',
+            badges: [
+              {
+                content: 'Events',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+              {
+                content: 'Authentication',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
+          })
+        );
+      });
+
+      it('when the AsyncAPI service is already defined in EventCatalog and the versions do not match, a new service is created and the old one is versioned', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService, getService } = utils(catalogDir);
+
+        await writeService(
+          {
+            id: 'account-service',
+            version: '0.0.1',
+            name: 'Account Service',
+            markdown: '',
+          },
+          { path: 'Account Service' }
+        );
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const versionedService = await getService('account-service', '0.0.1');
+        const newService = await getService('account-service', '1.0.0');
         expect(versionedService).toBeDefined();
         expect(newService).toBeDefined();
       });
 
-      it('the openapi file is added to the service which can be downloaded in eventcatalog', async () => {
+      it('any message with the operation `send` is added to the service. The service publishes this message.', async () => {
         const { getService } = utils(catalogDir);
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
 
-        const service = await getService('swagger-petstore', '1.0.0');
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        expect(service.schemaPath).toEqual('petstore.yml');
+        const service = await getService('account-service', '1.0.0');
 
-        const schema = await fs.readFile(join(catalogDir, 'services', 'Swagger Petstore', 'petstore.yml'));
-        expect(schema).toBeDefined();
+        expect(service.sends).toHaveLength(2);
+        expect(service.sends).toEqual([
+          { id: 'usersignedup', version: '1.0.0' },
+          { id: 'usersignedout', version: '1.0.0' },
+        ]);
       });
 
-      it('all endpoints in the OpenAPI spec are messages the service receives', async () => {
+      it('any message with the operation `receive` is added to the service. The service receives this message.', async () => {
         const { getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const service = await getService('swagger-petstore', '1.0.0');
+        const service = await getService('account-service', '1.0.0');
 
-        expect(service.receives).toHaveLength(4);
-        expect(service.receives).toEqual([
-          { id: 'listPets', version: '1.0.0' },
-          { id: 'createPets', version: '1.0.0' },
-          { id: 'showPetById', version: '1.0.0' },
-          { id: 'petAdopted', version: '1.0.0' },
-        ]);
+        expect(service.receives).toHaveLength(1);
+        expect(service.receives).toEqual([{ id: 'signupuser', version: '1.0.0' }]);
+      });
+
+      it('the asyncapi file is added to the service which can be downloaded in eventcatalog', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.yml'));
+        expect(schema).toBeDefined();
       });
     });
 
     describe('messages', () => {
-      it('messages that do not have an eventcatalog header are documented as commands by default in EventCatalog', async () => {
-        const { getCommand } = utils(catalogDir);
-
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
-
-        const command = await getCommand('listPets');
-
-        console.log(command);
-
-        expect(command).toEqual(
-          expect.objectContaining({
-            id: 'listPets',
-            version: '1.0.0',
-            name: 'listPets',
-            summary: 'List all pets',
-            badges: [{ content: 'pets', textColor: 'blue', backgroundColor: 'blue' }],
-          })
-        );
-      });
-
-      it('messages marked as "events" using the custom `x-ec-message-type` header in an OpenAPI are documented in EventCatalog as events ', async () => {
+      it('messages that do not have an eventcatalog header are documented as events by default in EventCatalog', async () => {
         const { getEvent } = utils(catalogDir);
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const event = await getEvent('petAdopted');
+        const event = await getEvent('usersignedout');
 
         expect(event).toEqual(
           expect.objectContaining({
-            id: 'petAdopted',
-            name: 'petAdopted',
+            id: 'usersignedout',
+            name: 'UserSignedOut',
             version: '1.0.0',
-            summary: 'Notify that a pet has been adopted',
+            summary: 'User signed out the application',
+            badges: [
+              {
+                content: 'New',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
           })
         );
       });
 
-      it('messages marked as "commands" using the custom `x-ec-message-type` header in an AsyncAPI are documented in EventCatalog as commands ', async () => {
-        const { getCommand } = utils(catalogDir);
+      it('messages marked as "events" using the custom `ec-message-type` header in an AsyncAPI are documented in EventCatalog as events ', async () => {
+        const { getEvent } = utils(catalogDir);
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const event = await getCommand('createPets');
+        const event = await getEvent('usersignedup');
 
         expect(event).toEqual(
           expect.objectContaining({
-            id: 'createPets',
-            name: 'createPets',
+            id: 'usersignedup',
+            name: 'UserSignedUp',
             version: '1.0.0',
-            summary: 'Create a pet',
+            summary: 'User signed up the application',
+            badges: [
+              {
+                content: 'New',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
+          })
+        );
+      });
+
+      it('messages marked as "commands" using the custom `ec-message-type` header in an AsyncAPI are documented in EventCatalog as commands ', async () => {
+        const { getCommand } = utils(catalogDir);
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+        const event = await getCommand('signupuser');
+
+        expect(event).toEqual(
+          expect.objectContaining({
+            id: 'signupuser',
+            name: 'SignUpUser',
+            version: '1.0.0',
+            summary: 'Sign up a user',
+            badges: [
+              {
+                content: 'New',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
           })
         );
       });
 
       it('when the message already exists in EventCatalog but the versions do not match, the existing message is versioned', async () => {
-        const { writeCommand, getCommand } = utils(catalogDir);
+        const { writeEvent, getEvent } = utils(catalogDir);
 
-        await writeCommand({
-          id: 'createPets',
-          name: 'createPets',
+        await writeEvent({
+          id: 'usersignedup',
           version: '0.0.1',
-          summary: 'Create a pet',
+          name: 'UserSignedUp',
           markdown: '',
         });
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const versionedEvent = await getCommand('createPets', '0.0.1');
-        const newEvent = await getCommand('createPets', '1.0.0');
+        const versionedEvent = await getEvent('usersignedup', '0.0.1');
+        const newEvent = await getEvent('usersignedup', '1.0.0');
 
         expect(versionedEvent).toBeDefined();
         expect(newEvent).toBeDefined();
       });
 
       it('when a the message already exists in EventCatalog the markdown is persisted and not overwritten', async () => {
-        const { writeCommand, getCommand } = utils(catalogDir);
+        const { writeEvent, getEvent } = utils(catalogDir);
 
-        await writeCommand({
-          id: 'createPets',
-          name: 'createPets',
+        await writeEvent({
+          id: 'usersignedup',
           version: '0.0.1',
-          summary: 'Create a pet',
+          name: 'UserSignedUp',
           markdown: 'please dont override me!',
         });
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const command = await getCommand('createPets', '1.0.0');
-        expect(command.markdown).toEqual('please dont override me!');
+        const newEvent = await getEvent('usersignedup', '1.0.0');
+        expect(newEvent.markdown).toEqual('please dont override me!');
       });
 
       it('when a message already exists in EventCatalog with the same version the metadata is updated', async () => {
-        const { writeCommand, getCommand } = utils(catalogDir);
+        const { writeEvent, getEvent } = utils(catalogDir);
 
-        await writeCommand({
-          id: 'createPets',
-          name: 'Random Name value',
-          version: '1.0.0',
-          summary: 'Create a pet',
-          markdown: '',
+        await writeEvent({
+          id: 'usersignedup',
+          version: '0.0.1',
+          name: 'UserSignedUp',
+          markdown: 'please dont override me!',
         });
 
-        await plugin(config, { path: join(openAPIExamples, 'petstore.yml') });
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
 
-        const command = await getCommand('createPets', '1.0.0');
-        expect(command.name).toEqual('createPets');
+        const newEvent = await getEvent('usersignedup', '1.0.0');
+        expect(newEvent.markdown).toEqual('please dont override me!');
+      });
+
+      describe('schemas', () => {
+        it('when a message has a schema defined in the AsyncAPI file, the schema is documented in EventCatalog', async () => {
+          await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+
+          const schema = await fs.readFile(join(catalogDir, 'events', 'UserSignedUp', 'schema.json'));
+          expect(schema).toBeDefined();
+        });
+
+        it('when a message has a schema defined in the AsyncAPI file, the schema download is enabled in EventCatalog', async () => {
+          const { getEvent } = utils(catalogDir);
+
+          await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+          const event = await getEvent('usersignedup', '1.0.0');
+
+          expect(event.schemaPath).toEqual('schema.json');
+        });
       });
     });
   });

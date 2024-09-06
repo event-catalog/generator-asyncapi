@@ -1,25 +1,25 @@
-import { OpenAPI } from 'openapi-types';
+import { AsyncAPIDocumentInterface } from '@asyncapi/parser';
 
-export const defaultMarkdown = (document: OpenAPI.Document) => {
+export const defaultMarkdown = (document: AsyncAPIDocumentInterface) => {
   return `
 
-${document.info.description ? `${document.info.description}` : ''}  
+${document.info().hasDescription() ? `${document.info().description()}` : ''}  
 
 ## Architecture diagram
 <NodeGraph />
 
 ${
-  document.externalDocs
+  document.info().externalDocs()
     ? `
 ## External documentation
-- [${document.externalDocs.description}](${document.externalDocs.url})
+- [${document.info().externalDocs()?.description()}](${document.info().externalDocs()?.url()})
 `
     : ''
 }
 `;
 };
 
-export const getSummary = (document: OpenAPI.Document) => {
-  const summary = document.info.description ? document.info.description : '';
+export const getSummary = (document: AsyncAPIDocumentInterface) => {
+  const summary = document.info().hasDescription() ? document.info().description() : '';
   return summary && summary.length < 150 ? summary : '';
 };

@@ -1,0 +1,102 @@
+asyncapi: 3.0.0
+info:
+  title: Account Service
+  version: 1.0.0
+  description: This service is in charge of processing user signups
+  contact:
+    name: Awesome Team
+    url: https://example.com
+    email: support@asyncapi.org
+  tags:
+    - name: Events
+      description: APIs related to event streaming
+    - name: Authentication
+      description: APIs for authentication and authorization
+  externalDocs:
+    description: Additional documentation
+    url: https://example.com/docs
+channels:
+  userSignedup:
+    address: user/signedup
+    messages:
+      UserSignedUp:
+        $ref: '#/components/messages/UserSignedUp'
+      SignUpUser:
+        $ref: '#/components/messages/SignUpUser'
+      UserSignedOut:
+        $ref: '#/components/messages/UserSignedOut'
+operations:
+  sendUserSignedup:
+    action: send
+    channel:
+      $ref: '#/channels/userSignedup'
+    messages:
+      - $ref: '#/channels/userSignedup/messages/UserSignedUp'
+  onUserSignup:
+    action: receive
+    channel:
+      $ref: '#/channels/userSignedup'
+    messages:
+      - $ref: '#/channels/userSignedup/messages/SignUpUser'
+  sendUserSignedout:
+    action: send
+    channel:
+      $ref: '#/channels/userSignedup'
+    messages:
+      - $ref: '#/channels/userSignedup/messages/UserSignedOut'
+components:
+  messages:
+    UserSignedUp:
+      description: 'User signed up the application'
+      x-eventcatalog-message-type: event
+      tags:
+        - name: 'New'
+          description: 'New event'
+      headers:
+        type: object
+        properties:
+          ec-message-type:
+            type: string
+            default: event
+            description: Type of message for EventCatalog
+      payload:
+        type: object
+        properties:
+          displayName:
+            type: string
+            description: Name of the user
+          email:
+            type: string
+            format: email
+            description: Email of the user
+    UserSignedOut:
+      description: 'User signed out the application'
+      tags:
+        - name: 'New'
+          description: 'New event'
+      payload:
+        type: object
+        properties:
+          displayName:
+            type: string
+            description: Name of the user
+          email:
+            type: string
+            format: email
+            description: Email of the user
+    SignUpUser:
+      description: 'Sign up a user'
+      x-eventcatalog-message-type: command
+      tags:
+        - name: 'New'
+          description: 'New event'
+      payload:
+        type: object
+        properties:
+          displayName:
+            type: string
+            description: Name of the user
+          email:
+            type: string
+            format: email
+            description: Email of the user
