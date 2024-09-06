@@ -15,8 +15,8 @@ import { defaultMarkdown as generateMarkdownForService, getSummary as getService
 import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
 import chalk from 'chalk';
 import checkLicense from './checkLicense';
-
-let metrics = { eventsCreated: 0, commandsCreated: 0, servicesCreated: 0, domainsCreated: 0 };
+import argv from 'minimist';
+const cliArgs = argv(process.argv.slice(2));
 
 type Domain = {
   id: string;
@@ -69,7 +69,7 @@ export default async (config: any, options: Props) => {
 
     if (!document) {
       console.log(chalk.red('Failed to parse AsyncAPI file'));
-      if (options.debug) {
+      if (options.debug || cliArgs.debug) {
         const diagnostics = await parser.validate(asyncAPIFile);
         console.log(diagnostics);
       } else {

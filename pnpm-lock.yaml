@@ -29,6 +29,9 @@ dependencies:
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
+  minimist:
+    specifier: ^1.2.8
+    version: 1.2.8
   slugify:
     specifier: ^1.6.6
     version: 1.6.6
@@ -40,6 +43,9 @@ devDependencies:
   '@types/lodash':
     specifier: ^4.17.7
     version: 4.17.7
+  '@types/minimist':
+    specifier: ^1.2.5
+    version: 1.2.5
   '@types/node':
     specifier: ^20.16.1
     version: 20.16.3
@@ -1200,6 +1206,10 @@ packages:
 
   /@types/lodash@4.17.7:
     resolution: {integrity: sha512-8wTvZawATi/lsmNu10/j2hk1KEP0IvjubqPE3cu1Xz7xfXXt5oCq3SNUz4fMIP4XGF9Ky+Ue2tBA3hcS7LSBlA==}
+    dev: true
+
+  /@types/minimist@1.2.5:
+    resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
     dev: true
 
   /@types/node@12.20.55:
@@ -2592,6 +2602,10 @@ packages:
     dependencies:
       brace-expansion: 2.0.1
     dev: true
+
+  /minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+    dev: false
 
   /minipass@7.1.2:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
