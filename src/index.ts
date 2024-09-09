@@ -1,7 +1,7 @@
 // import utils from '@eventcatalog/sdk';
 import { Parser, fromFile } from '@asyncapi/parser';
+import * as yaml from "js-yaml";
 const parser = new Parser();
-import { readFile } from 'node:fs/promises';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
 import {
@@ -64,7 +64,6 @@ export default async (config: any, options: Props) => {
   for (const path of asyncAPIFiles) {
     console.log(chalk.gray(`Processing ${path}`));
 
-    const asyncAPIFile = await readFile(path, 'utf-8');
     const { document, diagnostics } = await fromFile(parser, path).parse();
 
     if (!document) {
@@ -242,7 +241,7 @@ export default async (config: any, options: Props) => {
       serviceId,
       {
         fileName: path.split('/').pop() || 'asyncapi.yml',
-        content: asyncAPIFile,
+        content: yaml.dump(document.meta().asyncapi.parsed, {noRefs: true}),
       },
       version
     );
