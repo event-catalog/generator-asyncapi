@@ -465,12 +465,12 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(event).toBeDefined();
         expect(event.schemaPath).toEqual('schema.json');
 
-        const schema = await fs.readFile(join(catalogDir, 'events', 'usersignup', 'schema.json'));
+        // const schema = await fs.readFile(join(catalogDir, 'events', 'usersignup', 'schema.json'));
 
         //log the files in that directory
-        const files = await fs.readdir(join(catalogDir, 'events', 'usersignup'));
-        console.log("TESTING")
-        console.log(files);
+        // const files = await fs.readdir(join(catalogDir, 'events', 'usersignup'));
+        // console.log("TESTING")
+        // console.log(files);
 
         // expect(schema).toBeDefined();
       });
