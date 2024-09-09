@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.1.1
+
+### Patch Changes
+
+- 072f627: feat(plugin): added external file support using refs
+
 ## 0.1.0
 
 ### Minor Changes
