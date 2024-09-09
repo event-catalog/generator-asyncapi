@@ -1,7 +1,6 @@
 // import utils from '@eventcatalog/sdk';
 import { Parser, fromFile } from '@asyncapi/parser';
 const parser = new Parser();
-import { readFile } from 'node:fs/promises';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
 import {
@@ -66,7 +65,6 @@ export default async (config: any, options: Props) => {
   for (const path of asyncAPIFiles) {
     console.log(chalk.gray(`Processing ${path}`));
 
-    const asyncAPIFile = await readFile(path, 'utf-8');
     const { document, diagnostics } = await fromFile(parser, path).parse();
 
     if (!document) {
@@ -220,10 +218,6 @@ export default async (config: any, options: Props) => {
         await rmService(document.info().title());
       }
     }
-
-    console.log(document.meta().asyncapi.parsed);
-
-    // console.log(document.meta().asyncapi.parsed, {noRefs: true});
 
     await writeService(
       {

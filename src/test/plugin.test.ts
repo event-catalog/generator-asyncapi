@@ -112,8 +112,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const service = await getService('account-service');
 
-        console.log(service);
-
         expect(service).toEqual(
           expect.objectContaining({
             id: 'account-service',
