@@ -41,6 +41,7 @@
     "fs-extra": "^11.2.0",
     "glob": "^11.0.0",
     "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.8",
     "slugify": "^1.6.6"
