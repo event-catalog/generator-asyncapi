@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.1.2
+
+### Patch Changes
+
+- 5a66746: feat(plugin): asyncapi written to service does not contain any refs
+
 ## 0.1.1
 
 ### Patch Changes
