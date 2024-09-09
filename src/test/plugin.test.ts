@@ -469,6 +469,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         //log the files in that directory
         const files = await fs.readdir(join(catalogDir, 'events', 'usersignup'));
+        console.log("TESTING")
         console.log(files);
 
         // expect(schema).toBeDefined();
