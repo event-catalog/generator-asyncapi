@@ -1,5 +1,5 @@
 // import utils from '@eventcatalog/sdk';
-import { Parser } from '@asyncapi/parser';
+import { Parser, fromFile } from '@asyncapi/parser';
 const parser = new Parser();
 import { readFile } from 'node:fs/promises';
 import utils from '@eventcatalog/sdk';
@@ -65,12 +65,11 @@ export default async (config: any, options: Props) => {
     console.log(chalk.gray(`Processing ${path}`));
 
     const asyncAPIFile = await readFile(path, 'utf-8');
-    const { document } = await parser.parse(asyncAPIFile);
+    const { document, diagnostics } = await fromFile(parser, path).parse();
 
     if (!document) {
       console.log(chalk.red('Failed to parse AsyncAPI file'));
       if (options.debug || cliArgs.debug) {
-        const diagnostics = await parser.validate(asyncAPIFile);
         console.log(diagnostics);
       } else {
         console.log(chalk.red('Run with debug option in the generator to see diagnostics'));

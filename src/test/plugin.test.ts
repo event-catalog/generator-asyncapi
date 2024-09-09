@@ -451,5 +451,23 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         });
       });
     });
+
+    describe('$ref', () => {
+      it('AsyncAPI files with $ref are resolved and added to the catalog', async () => {
+        const { getEvent, getService } = utils(catalogDir);
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'ref-example.yml') });
+
+        const service = await getService('test-service', '1.1.0');
+        const event = await getEvent('usersignup', '1.1.0');
+
+        expect(service).toBeDefined();
+        expect(event).toBeDefined();
+        expect(event.schemaPath).toEqual('schema.json');
+
+        const schema = await fs.readFile(join(catalogDir, 'events', 'usersignup', 'schema.json'));
+        expect(schema).toBeDefined();
+      });
+    });
   });
 });
