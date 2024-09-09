@@ -474,6 +474,17 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         // expect(schema).toBeDefined();
       });
+
+      it('if the AsyncAPI has any $ref these are not saved to the service. The servive AsyncAPI is has no $ref', async () => {
+        const { getService } = utils(catalogDir);
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'ref-example.yml') });
+
+        const asyncAPIFile = await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.yml'));
+        const expected = await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.yml'));
+
+        expect(asyncAPIFile).toEqual(expected);
+      });
     });
   });
 });

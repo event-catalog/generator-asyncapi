@@ -1,0 +1,181 @@
+asyncapi: 3.0.0
+info:
+  title: Test Service
+  description: description
+  version: 1.1.0
+channels:
+  randomChannel:
+    address: myAddress
+    messages:
+      UserSignup:
+        name: UserSignup
+        title: User signup
+        summary: Action to sign a user up.
+        description: A longer description of the signup process
+        contentType: application/json
+        payload:
+          type: object
+          properties:
+            fullName:
+              description: The full name of the user.
+              type: string
+              example: John Doe
+              x-parser-schema-id: <anonymous-schema-2>
+            email:
+              description: User's email address.
+              type: string
+              format: email
+              example: john.doe@example.com
+              x-parser-schema-id: <anonymous-schema-3>
+            password:
+              description: User's account password.
+              type: string
+              format: password
+              minLength: 8
+              example: password123
+              x-parser-schema-id: <anonymous-schema-4>
+            dateOfBirth:
+              description: User's date of birth.
+              type: string
+              format: date
+              example: '1990-01-01'
+              x-parser-schema-id: <anonymous-schema-5>
+            phoneNumber:
+              description: User's phone number (optional).
+              type: string
+              pattern: ^\+?[1-9]\d{1,14}$
+              example: '+1234567890'
+              x-parser-schema-id: <anonymous-schema-6>
+            termsAccepted:
+              description: Whether the user has accepted the terms and conditions.
+              type: boolean
+              example: true
+              x-parser-schema-id: <anonymous-schema-7>
+          required:
+            - fullName
+            - email
+            - password
+            - termsAccepted
+          additionalProperties: false
+          x-parser-schema-id: <anonymous-schema-1>
+        x-parser-unique-object-id: UserSignup
+    x-parser-unique-object-id: randomChannel
+operations:
+  sendNoise:
+    action: send
+    channel:
+      address: myAddress
+      messages:
+        UserSignup:
+          name: UserSignup
+          title: User signup
+          summary: Action to sign a user up.
+          description: A longer description of the signup process
+          contentType: application/json
+          payload:
+            type: object
+            properties:
+              fullName:
+                description: The full name of the user.
+                type: string
+                example: John Doe
+                x-parser-schema-id: <anonymous-schema-2>
+              email:
+                description: User's email address.
+                type: string
+                format: email
+                example: john.doe@example.com
+                x-parser-schema-id: <anonymous-schema-3>
+              password:
+                description: User's account password.
+                type: string
+                format: password
+                minLength: 8
+                example: password123
+                x-parser-schema-id: <anonymous-schema-4>
+              dateOfBirth:
+                description: User's date of birth.
+                type: string
+                format: date
+                example: '1990-01-01'
+                x-parser-schema-id: <anonymous-schema-5>
+              phoneNumber:
+                description: User's phone number (optional).
+                type: string
+                pattern: ^\+?[1-9]\d{1,14}$
+                example: '+1234567890'
+                x-parser-schema-id: <anonymous-schema-6>
+              termsAccepted:
+                description: Whether the user has accepted the terms and conditions.
+                type: boolean
+                example: true
+                x-parser-schema-id: <anonymous-schema-7>
+            required:
+              - fullName
+              - email
+              - password
+              - termsAccepted
+            additionalProperties: false
+            x-parser-schema-id: <anonymous-schema-1>
+          x-parser-unique-object-id: UserSignup
+      x-parser-unique-object-id: randomChannel
+    x-parser-unique-object-id: sendNoise
+components:
+  schemas:
+    UserSignup:
+      schemaFormat: application/schema+json;version=draft-07
+      schema:
+        name: UserSignup
+        title: User signup
+        summary: Action to sign a user up.
+        description: A longer description of the signup process
+        contentType: application/json
+        payload:
+          type: object
+          properties:
+            fullName:
+              description: The full name of the user.
+              type: string
+              example: John Doe
+              x-parser-schema-id: <anonymous-schema-2>
+            email:
+              description: User's email address.
+              type: string
+              format: email
+              example: john.doe@example.com
+              x-parser-schema-id: <anonymous-schema-3>
+            password:
+              description: User's account password.
+              type: string
+              format: password
+              minLength: 8
+              example: password123
+              x-parser-schema-id: <anonymous-schema-4>
+            dateOfBirth:
+              description: User's date of birth.
+              type: string
+              format: date
+              example: '1990-01-01'
+              x-parser-schema-id: <anonymous-schema-5>
+            phoneNumber:
+              description: User's phone number (optional).
+              type: string
+              pattern: ^\+?[1-9]\d{1,14}$
+              example: '+1234567890'
+              x-parser-schema-id: <anonymous-schema-6>
+            termsAccepted:
+              description: Whether the user has accepted the terms and conditions.
+              type: boolean
+              example: true
+              x-parser-schema-id: <anonymous-schema-7>
+          required:
+            - fullName
+            - email
+            - password
+            - termsAccepted
+          additionalProperties: false
+          x-parser-schema-id: <anonymous-schema-1>
+        x-parser-unique-object-id: UserSignup
+      x-parser-schema-id: UserSignup
+x-parser-spec-parsed: true
+x-parser-api-version: 3

@@ -26,6 +26,9 @@ dependencies:
   gray-matter:
     specifier: ^4.0.3
     version: 4.0.3
+  js-yaml:
+    specifier: ^4.1.0
+    version: 4.1.0
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
@@ -40,6 +43,9 @@ devDependencies:
   '@types/fs-extra':
     specifier: ^11.0.4
     version: 11.0.4
+  '@types/js-yaml':
+    specifier: ^4.0.9
+    version: 4.0.9
   '@types/lodash':
     specifier: ^4.17.7
     version: 4.17.7
@@ -1180,6 +1186,10 @@ packages:
     dependencies:
       '@types/jsonfile': 6.1.4
       '@types/node': 20.16.5
+    dev: true
+
+  /@types/js-yaml@4.0.9:
+    resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
     dev: true
 
   /@types/json-schema@7.0.15:
