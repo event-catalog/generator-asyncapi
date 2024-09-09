@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.1.3
+
+### Patch Changes
+
+- bf14d91: chore(plugin): removed logs - forced build
+
 ## 0.1.2
 
 ### Patch Changes
