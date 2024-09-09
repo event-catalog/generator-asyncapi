@@ -16,6 +16,8 @@ import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
 import chalk from 'chalk';
 import checkLicense from './checkLicense';
 import argv from 'minimist';
+import yaml from 'js-yaml';
+
 const cliArgs = argv(process.argv.slice(2));
 
 type Domain = {
@@ -219,6 +221,10 @@ export default async (config: any, options: Props) => {
       }
     }
 
+    console.log(document.meta().asyncapi.parsed);
+
+    // console.log(document.meta().asyncapi.parsed, {noRefs: true});
+
     await writeService(
       {
         id: serviceId,
@@ -242,7 +248,7 @@ export default async (config: any, options: Props) => {
       serviceId,
       {
         fileName: path.split('/').pop() || 'asyncapi.yml',
-        content: asyncAPIFile,
+        content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
       },
       version
     );
