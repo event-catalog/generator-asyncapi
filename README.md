@@ -39,7 +39,7 @@ With this AsyncAPI plugin you can connect your AsyncAPI files to your catalog. T
 ...
 generators: [
     [
-      '@eventcatalogtest/generator-asyncapi',
+      '@eventcatalog/generator-asyncapi',
       {
         path: [path.join(__dirname, 'asyncapi-files', 'orders-service.yml'),
         domain: { id: 'orders', name: 'Orders', version: '0.0.1' },
