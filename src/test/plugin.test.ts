@@ -462,26 +462,35 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(service).toBeDefined();
         expect(event).toBeDefined();
         expect(event.schemaPath).toEqual('schema.json');
-
-        // const schema = await fs.readFile(join(catalogDir, 'events', 'usersignup', 'schema.json'));
-
-        //log the files in that directory
-        // const files = await fs.readdir(join(catalogDir, 'events', 'usersignup'));
-        // console.log("TESTING")
-        // console.log(files);
-
-        // expect(schema).toBeDefined();
       });
 
       it('if the AsyncAPI has any $ref these are not saved to the service. The servive AsyncAPI is has no $ref', async () => {
-        const { getService } = utils(catalogDir);
-
         await plugin(config, { path: join(asyncAPIExamplesDir, 'ref-example.yml') });
 
         const asyncAPIFile = await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.yml'));
         const expected = await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.yml'));
 
         expect(asyncAPIFile).toEqual(expected);
+      });
+    });
+
+    describe('asyncapi files with avro schemas', () => {
+      it('parses the AsyncAPI file with avro schemas', async () => {
+        const { getEvent, getService } = utils(catalogDir);
+
+        await plugin(config, { path: join(asyncAPIExamplesDir, 'asyncapi-with-avro.yml') });
+
+        const service = await getService('user-signup-api', '1.0.0');
+        const event = await getEvent('usersignedup', '1.0.0');
+
+        expect(service).toBeDefined();
+        expect(event).toBeDefined();
+
+        expect(event.schemaPath).toEqual('schema.avsc');
+
+        // Check file schema.avsc
+        const schema = await fs.readFile(join(catalogDir, 'events', 'userSignedUp', 'schema.avsc'));
+        expect(schema).toBeDefined();
       });
     });
   });

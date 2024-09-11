@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@asyncapi/avro-schema-parser':
+    specifier: ^3.0.24
+    version: 3.0.24
   '@asyncapi/parser':
     specifier: ^3.2.2
     version: 3.2.2
@@ -77,6 +80,16 @@ packages:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
     dev: true
+
+  /@asyncapi/avro-schema-parser@3.0.24:
+    resolution: {integrity: sha512-YMyr2S2heMrWHRyECknjHeejlZl5exUSv9nD1gTejAT13fSf0PqIRydZ9ZuoglCLBg55AeehypR2zLIBu/9kHQ==}
+    dependencies:
+      '@asyncapi/parser': 3.2.2
+      '@types/json-schema': 7.0.15
+      avsc: 5.7.7
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /@asyncapi/parser@3.2.2:
     resolution: {integrity: sha512-ved4ja3ANs6BcRhWLbK/A7JIhJyMQBYdV1GZwo6Ptf+qBkGIdvV3dt8M4T6TZqtIbUI2NOvmO2YUqtaPWTudgA==}
