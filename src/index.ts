@@ -1,6 +1,5 @@
 // import utils from '@eventcatalog/sdk';
 import { Parser, fromFile } from '@asyncapi/parser';
-const parser = new Parser();
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
 import {
@@ -16,6 +15,14 @@ import chalk from 'chalk';
 import checkLicense from './checkLicense';
 import argv from 'minimist';
 import yaml from 'js-yaml';
+
+// AsyncAPI Parsers
+import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
+
+const parser = new Parser();
+
+// register avro schema support
+parser.registerSchemaParser(AvroSchemaParser());
 
 const cliArgs = argv(process.argv.slice(2));
 
