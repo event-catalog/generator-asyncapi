@@ -33,7 +33,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         });
 
         await plugin(config, {
-          path: join(asyncAPIExamplesDir, 'simple.yml'),
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }],
           domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
         });
 
@@ -56,7 +56,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         });
 
         await plugin(config, {
-          path: join(asyncAPIExamplesDir, 'simple.yml'),
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }],
           domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
         });
 
@@ -68,7 +68,10 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         const { getDomain } = utils(catalogDir);
 
         await plugin(config, {
-          path: [join(asyncAPIExamplesDir, 'simple.yml'), join(asyncAPIExamplesDir, 'orders-service.yml')],
+          services: [
+            { path: join(asyncAPIExamplesDir, 'simple.yml') },
+            { path: join(asyncAPIExamplesDir, 'orders-service.yml') },
+          ],
           domain: { id: 'orders', name: 'Orders', version: '1.0.0' },
         });
 
@@ -87,7 +90,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(await getDomain('orders', '1.0.0')).toBeUndefined();
 
         await plugin(config, {
-          path: join(asyncAPIExamplesDir, 'simple.yml'),
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }],
           domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
         });
 
@@ -98,7 +101,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('if a domain is not defined in the AsyncAPI plugin configuration, the service is not added to any domains', async () => {
         const { getDomain } = utils(catalogDir);
         await plugin(config, {
-          path: join(asyncAPIExamplesDir, 'simple.yml'),
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }],
         });
         expect(await getDomain('orders', '1.0.0')).toBeUndefined();
       });
@@ -108,7 +111,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('asyncapi is mapped into a service in EventCatalog when no service with this name is already defined', async () => {
         const { getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service');
 
@@ -148,7 +151,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           { path: 'Account Service' }
         );
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', '1.0.0');
         expect(service).toEqual(
@@ -187,7 +190,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           { path: 'Account Service' }
         );
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', '1.0.0');
         expect(service).toEqual(
@@ -227,7 +230,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           { path: 'Account Service' }
         );
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const versionedService = await getService('account-service', '0.0.1');
         const newService = await getService('account-service', '1.0.0');
@@ -238,7 +241,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('any message with the operation `send` is added to the service. The service publishes this message.', async () => {
         const { getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', '1.0.0');
 
@@ -252,7 +255,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('any message with the operation `receive` is added to the service. The service receives this message.', async () => {
         const { getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', '1.0.0');
 
@@ -262,7 +265,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
       it('the asyncapi file is added to the service which can be downloaded in eventcatalog', async () => {
         const { getService } = utils(catalogDir);
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', '1.0.0');
 
@@ -274,7 +277,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
       it('the asyncapi specification file path is added to the service which can be rendered and visualized in eventcatalog', async () => {
         const { getService } = utils(catalogDir);
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', '1.0.0');
 
@@ -299,11 +302,23 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           { path: 'Account Service' }
         );
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const service = await getService('account-service', existingVersion);
         expect(service.specifications?.asyncapiPath).toEqual('simple.yml');
         expect(service.specifications?.openapiPath).toEqual('simple.yml');
+      });
+
+      it('if an `id` value is given with the service, then the generator uses that id and does not generate one from the title', async () => {
+        const { getService } = utils(catalogDir);
+
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.yml'), id: 'custom-id' }],
+        });
+
+        const service = await getService('custom-id', '1.0.0');
+
+        expect(service).toBeDefined();
       });
     });
 
@@ -311,7 +326,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('messages that do not have an eventcatalog header are documented as events by default in EventCatalog', async () => {
         const { getEvent } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const event = await getEvent('usersignedout');
 
@@ -335,7 +350,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('messages marked as "events" using the custom `ec-message-type` header in an AsyncAPI are documented in EventCatalog as events ', async () => {
         const { getEvent } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const event = await getEvent('usersignedup');
 
@@ -359,7 +374,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('messages marked as "commands" using the custom `ec-message-type` header in an AsyncAPI are documented in EventCatalog as commands ', async () => {
         const { getCommand } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const event = await getCommand('signupuser');
 
@@ -390,7 +405,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           markdown: '',
         });
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const versionedEvent = await getEvent('usersignedup', '0.0.1');
         const newEvent = await getEvent('usersignedup', '1.0.0');
@@ -409,7 +424,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           markdown: 'please dont override me!',
         });
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const newEvent = await getEvent('usersignedup', '1.0.0');
         expect(newEvent.markdown).toEqual('please dont override me!');
@@ -425,7 +440,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           markdown: 'please dont override me!',
         });
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
         const newEvent = await getEvent('usersignedup', '1.0.0');
         expect(newEvent.markdown).toEqual('please dont override me!');
@@ -433,7 +448,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
       describe('schemas', () => {
         it('when a message has a schema defined in the AsyncAPI file, the schema is documented in EventCatalog', async () => {
-          await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+          await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
 
           const schema = await fs.readFile(join(catalogDir, 'events', 'UserSignedUp', 'schema.json'));
           expect(schema).toBeDefined();
@@ -442,7 +457,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         it('when a message has a schema defined in the AsyncAPI file, the schema download is enabled in EventCatalog', async () => {
           const { getEvent } = utils(catalogDir);
 
-          await plugin(config, { path: join(asyncAPIExamplesDir, 'simple.yml') });
+          await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.yml') }] });
           const event = await getEvent('usersignedup', '1.0.0');
 
           expect(event.schemaPath).toEqual('schema.json');
@@ -454,7 +469,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('AsyncAPI files with $ref are resolved and added to the catalog', async () => {
         const { getEvent, getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'ref-example.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'ref-example.yml') }] });
 
         const service = await getService('test-service', '1.1.0');
         const event = await getEvent('usersignup', '1.1.0');
@@ -465,7 +480,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       });
 
       it('if the AsyncAPI has any $ref these are not saved to the service. The servive AsyncAPI is has no $ref', async () => {
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'ref-example.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'ref-example.yml') }] });
 
         const asyncAPIFile = await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.yml'));
         const expected = await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.yml'));
@@ -478,7 +493,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       it('parses the AsyncAPI file with avro schemas', async () => {
         const { getEvent, getService } = utils(catalogDir);
 
-        await plugin(config, { path: join(asyncAPIExamplesDir, 'asyncapi-with-avro.yml') });
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'asyncapi-with-avro.yml') }] });
 
         const service = await getService('user-signup-api', '1.0.0');
         const event = await getEvent('usersignedup', '1.0.0');
