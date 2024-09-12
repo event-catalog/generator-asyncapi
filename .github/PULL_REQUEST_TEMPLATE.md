@@ -3,7 +3,7 @@ Thank you for sending the PR! We appreciate you spending the time to work on the
 
 Help us understand your motivation by explaining why you decided to make this change.
 
-You can learn more about contributing to EventCatalog here: https://github.com/event-catalog/eventcatalog/blob/main/CONTRIBUTING.md
+You can learn more about contributing to EventCatalog here: https://www.eventcatalog.dev/docs/contributing/overview
 
 Happy contributing!
 
