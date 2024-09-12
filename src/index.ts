@@ -32,8 +32,13 @@ type Domain = {
   version: string;
 };
 
+type Service = {
+  id?: string;
+  path: string;
+};
+
 type Props = {
-  path: string | string[];
+  services: Service[];
   domain?: Domain;
   debug?: boolean;
 };
@@ -65,14 +70,15 @@ export default async (config: any, options: Props) => {
     versionDomain,
   } = utils(process.env.PROJECT_DIR);
 
-  const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
+  const services = options.services;
+  // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
 
-  console.log(chalk.green(`Processing ${asyncAPIFiles.length} AsyncAPI files...`));
+  console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
 
-  for (const path of asyncAPIFiles) {
-    console.log(chalk.gray(`Processing ${path}`));
+  for (const service of services) {
+    console.log(chalk.gray(`Processing ${service.path}`));
 
-    const { document, diagnostics } = await fromFile(parser, path).parse();
+    const { document, diagnostics } = await fromFile(parser, service.path).parse();
 
     if (!document) {
       console.log(chalk.red('Failed to parse AsyncAPI file'));
@@ -87,7 +93,7 @@ export default async (config: any, options: Props) => {
     const operations = document.allOperations();
     const documentTags = document.info().tags().all() || [];
 
-    const serviceId = slugify(document.info().title(), { lower: true, strict: true });
+    const serviceId = service.id || slugify(document.info().title(), { lower: true, strict: true });
     const version = document.info().version();
 
     // What messages does this service send and receive
@@ -236,10 +242,10 @@ export default async (config: any, options: Props) => {
         markdown: serviceMarkdown,
         sends,
         receives,
-        schemaPath: path.split('/').pop() || 'asyncapi.yml',
+        schemaPath: service.path.split('/').pop() || 'asyncapi.yml',
         specifications: {
           ...specifications,
-          asyncapiPath: path.split('/').pop() || 'asyncapi.yml',
+          asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
         },
       },
       { path: document.info().title() }
@@ -248,7 +254,7 @@ export default async (config: any, options: Props) => {
     await addFileToService(
       serviceId,
       {
-        fileName: path.split('/').pop() || 'asyncapi.yml',
+        fileName: service.path.split('/').pop() || 'asyncapi.yml',
         content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
       },
       version
