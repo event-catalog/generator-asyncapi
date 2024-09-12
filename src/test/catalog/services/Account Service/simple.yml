@@ -1,0 +1,126 @@
+asyncapi: 3.0.0
+info:
+  title: Account Service
+  version: 1.0.0
+  description: This service is in charge of processing user signups
+  contact:
+    name: Awesome Team
+    url: https://example.com
+    email: support@asyncapi.org
+  tags:
+    - name: Events
+      description: APIs related to event streaming
+    - name: Authentication
+      description: APIs for authentication and authorization
+  externalDocs:
+    description: Additional documentation
+    url: https://example.com/docs
+channels:
+  userSignedup:
+    address: user/signedup
+    messages:
+      UserSignedUp:
+        description: User signed up the application
+        x-eventcatalog-message-type: event
+        tags:
+          - name: New
+            description: New event
+        headers:
+          type: object
+          properties:
+            ec-message-type:
+              type: string
+              default: event
+              description: Type of message for EventCatalog
+              x-parser-schema-id: <anonymous-schema-2>
+          x-parser-schema-id: <anonymous-schema-1>
+        payload:
+          type: object
+          properties:
+            displayName:
+              type: string
+              description: Name of the user
+              x-parser-schema-id: <anonymous-schema-4>
+            email:
+              type: string
+              format: email
+              description: Email of the user
+              x-parser-schema-id: <anonymous-schema-5>
+          x-parser-schema-id: <anonymous-schema-3>
+        x-parser-unique-object-id: UserSignedUp
+        x-parser-message-name: UserSignedUp
+      SignUpUser:
+        description: Sign up a user
+        x-eventcatalog-message-type: command
+        tags:
+          - name: New
+            description: New event
+        payload:
+          type: object
+          properties:
+            displayName:
+              type: string
+              description: Name of the user
+              x-parser-schema-id: <anonymous-schema-7>
+            email:
+              type: string
+              format: email
+              description: Email of the user
+              x-parser-schema-id: <anonymous-schema-8>
+          x-parser-schema-id: <anonymous-schema-6>
+        x-parser-unique-object-id: SignUpUser
+        x-parser-message-name: SignUpUser
+      UserSignedOut:
+        description: User signed out the application
+        tags:
+          - name: New
+            description: New event
+        payload:
+          type: object
+          properties:
+            displayName:
+              type: string
+              description: Name of the user
+              x-parser-schema-id: <anonymous-schema-10>
+            email:
+              type: string
+              format: email
+              description: Email of the user
+              x-parser-schema-id: <anonymous-schema-11>
+          x-parser-schema-id: <anonymous-schema-9>
+        x-parser-unique-object-id: UserSignedOut
+        x-parser-message-name: UserSignedOut
+    x-parser-unique-object-id: userSignedup
+operations:
+  sendUserSignedup:
+    action: send
+    channel:
+      $ref: '#/channels/userSignedup'
+    messages:
+      - $ref: '#/channels/userSignedup/messages/UserSignedUp'
+    x-parser-unique-object-id: sendUserSignedup
+  onUserSignup:
+    action: receive
+    channel:
+      $ref: '#/channels/userSignedup'
+    messages:
+      - $ref: '#/channels/userSignedup/messages/SignUpUser'
+    x-parser-unique-object-id: onUserSignup
+  sendUserSignedout:
+    action: send
+    channel:
+      $ref: '#/channels/userSignedup'
+    messages:
+      - $ref: '#/channels/userSignedup/messages/UserSignedOut'
+    x-parser-unique-object-id: sendUserSignedout
+components:
+  messages:
+    UserSignedUp:
+      $ref: '#/channels/userSignedup/messages/UserSignedUp'
+    UserSignedOut:
+      $ref: '#/channels/userSignedup/messages/UserSignedOut'
+    SignUpUser:
+      $ref: '#/channels/userSignedup/messages/SignUpUser'
+x-parser-spec-parsed: true
+x-parser-api-version: 3
+x-parser-spec-stringified: true

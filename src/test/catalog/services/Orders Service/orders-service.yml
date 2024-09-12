@@ -1,0 +1,235 @@
+asyncapi: 3.0.0
+info:
+  title: Orders Service
+  version: 1.0.1
+  description: This service is in charge of processing orders
+operations:
+  sendOrderCreated:
+    action: send
+    channel:
+      address: order/created
+      messages:
+        OrderCreated:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-2>
+              userId:
+                type: string
+                description: Unique identifier for the user who placed the order
+                x-parser-schema-id: <anonymous-schema-3>
+              totalAmount:
+                type: number
+                format: float
+                description: Total amount of the order
+                x-parser-schema-id: <anonymous-schema-4>
+              items:
+                type: array
+                description: List of items in the order
+                items:
+                  type: object
+                  properties:
+                    itemId:
+                      type: string
+                      description: Unique identifier for the item
+                      x-parser-schema-id: <anonymous-schema-7>
+                    quantity:
+                      type: integer
+                      description: Quantity of the item ordered
+                      x-parser-schema-id: <anonymous-schema-8>
+                    price:
+                      type: number
+                      format: float
+                      description: Price of the item
+                      x-parser-schema-id: <anonymous-schema-9>
+                  x-parser-schema-id: <anonymous-schema-6>
+                x-parser-schema-id: <anonymous-schema-5>
+            x-parser-schema-id: <anonymous-schema-1>
+          x-parser-unique-object-id: OrderCreated
+          x-parser-message-name: OrderCreated
+      x-parser-unique-object-id: orderCreated
+    x-parser-unique-object-id: sendOrderCreated
+  sendOrderUpdated:
+    action: send
+    channel:
+      address: order/updated
+      messages:
+        OrderUpdated:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-11>
+              updatedFields:
+                type: object
+                description: Fields that were updated in the order
+                additionalProperties: true
+                x-parser-schema-id: <anonymous-schema-12>
+            x-parser-schema-id: <anonymous-schema-10>
+          x-parser-unique-object-id: OrderUpdated
+          x-parser-message-name: OrderUpdated
+      x-parser-unique-object-id: orderUpdated
+    x-parser-unique-object-id: sendOrderUpdated
+  sendOrderCancelled:
+    action: send
+    channel:
+      address: order/cancelled
+      messages:
+        OrderCancelled:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-14>
+              reason:
+                type: string
+                description: Reason for the order cancellation
+                x-parser-schema-id: <anonymous-schema-15>
+            x-parser-schema-id: <anonymous-schema-13>
+          x-parser-unique-object-id: OrderCancelled
+          x-parser-message-name: OrderCancelled
+      x-parser-unique-object-id: orderCancelled
+    x-parser-unique-object-id: sendOrderCancelled
+  sendOrderCompleted:
+    action: send
+    channel:
+      address: order/completed
+      messages:
+        OrderCompleted:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-17>
+              completionTime:
+                type: string
+                format: date-time
+                description: Time when the order was completed
+                x-parser-schema-id: <anonymous-schema-18>
+            x-parser-schema-id: <anonymous-schema-16>
+          x-parser-unique-object-id: OrderCompleted
+          x-parser-message-name: OrderCompleted
+      x-parser-unique-object-id: orderCompleted
+    x-parser-unique-object-id: sendOrderCompleted
+  receivePaymentProcessed:
+    action: receive
+    channel:
+      address: payment/processed
+      messages:
+        PaymentProcessed:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-20>
+              paymentId:
+                type: string
+                description: Unique identifier for the payment
+                x-parser-schema-id: <anonymous-schema-21>
+              status:
+                type: string
+                description: Status of the payment
+                x-parser-schema-id: <anonymous-schema-22>
+            x-parser-schema-id: <anonymous-schema-19>
+          x-parser-unique-object-id: PaymentProcessed
+          x-parser-message-name: PaymentProcessed
+      x-parser-unique-object-id: paymentProcessed
+    x-parser-unique-object-id: receivePaymentProcessed
+  receiveInventoryReserved:
+    action: receive
+    channel:
+      address: inventory/reserved
+      messages:
+        InventoryReserved:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-24>
+              reservationId:
+                type: string
+                description: Unique identifier for the inventory reservation
+                x-parser-schema-id: <anonymous-schema-25>
+              status:
+                type: string
+                description: Status of the inventory reservation
+                x-parser-schema-id: <anonymous-schema-26>
+            x-parser-schema-id: <anonymous-schema-23>
+          x-parser-unique-object-id: InventoryReserved
+          x-parser-message-name: InventoryReserved
+      x-parser-unique-object-id: inventoryReserved
+    x-parser-unique-object-id: receiveInventoryReserved
+  receiveShipmentDelivered:
+    action: receive
+    channel:
+      address: shipment/delivered
+      messages:
+        ShipmentDelivered:
+          payload:
+            type: object
+            properties:
+              orderId:
+                type: string
+                description: Unique identifier for the order
+                x-parser-schema-id: <anonymous-schema-28>
+              shipmentId:
+                type: string
+                description: Unique identifier for the shipment
+                x-parser-schema-id: <anonymous-schema-29>
+              deliveryTime:
+                type: string
+                format: date-time
+                description: Time when the shipment was delivered
+                x-parser-schema-id: <anonymous-schema-30>
+            x-parser-schema-id: <anonymous-schema-27>
+          x-parser-unique-object-id: ShipmentDelivered
+          x-parser-message-name: ShipmentDelivered
+      x-parser-unique-object-id: shipmentDelivered
+    x-parser-unique-object-id: receiveShipmentDelivered
+channels:
+  orderCreated:
+    $ref: '#/operations/sendOrderCreated/channel'
+  orderUpdated:
+    $ref: '#/operations/sendOrderUpdated/channel'
+  orderCancelled:
+    $ref: '#/operations/sendOrderCancelled/channel'
+  orderCompleted:
+    $ref: '#/operations/sendOrderCompleted/channel'
+  paymentProcessed:
+    $ref: '#/operations/receivePaymentProcessed/channel'
+  inventoryReserved:
+    $ref: '#/operations/receiveInventoryReserved/channel'
+  shipmentDelivered:
+    $ref: '#/operations/receiveShipmentDelivered/channel'
+components:
+  messages:
+    OrderCreated:
+      $ref: '#/operations/sendOrderCreated/channel/messages/OrderCreated'
+    OrderUpdated:
+      $ref: '#/operations/sendOrderUpdated/channel/messages/OrderUpdated'
+    OrderCancelled:
+      $ref: '#/operations/sendOrderCancelled/channel/messages/OrderCancelled'
+    OrderCompleted:
+      $ref: '#/operations/sendOrderCompleted/channel/messages/OrderCompleted'
+    PaymentProcessed:
+      $ref: '#/operations/receivePaymentProcessed/channel/messages/PaymentProcessed'
+    InventoryReserved:
+      $ref: '#/operations/receiveInventoryReserved/channel/messages/InventoryReserved'
+    ShipmentDelivered:
+      $ref: '#/operations/receiveShipmentDelivered/channel/messages/ShipmentDelivered'
+x-parser-spec-parsed: true
+x-parser-api-version: 3
+x-parser-spec-stringified: true

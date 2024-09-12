@@ -1,5 +1,7 @@
 // import utils from '@eventcatalog/sdk';
-import { Parser, fromFile } from '@asyncapi/parser';
+import { Parser, fromFile, stringify, unstringify } from '@asyncapi/parser';
+import { Optimizer } from '@asyncapi/optimizer';
+import { Report, Output } from '@asyncapi/optimizer'
 const parser = new Parser();
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
@@ -238,11 +240,46 @@ export default async (config: any, options: Props) => {
       { path: document.info().title() }
     );
 
+    const replacerFunction = (key: string, value: any) => {
+      if (value.startsWith && value.startsWith('$ref:$')) {
+        console.log(key)
+        console.log(value)
+        let replacedValue = value.replace('$ref:$', '').replace(/\./g, '/');
+        return {
+          $ref: `#${replacedValue}`,
+        }
+      }
+      return value;
+    };
+
+    let optimizer = new Optimizer(document.json());
+    const report: Report = await optimizer.getReport()
+    const optimizedDocument = optimizer.getOptimizedDocument({
+      output: Output.YAML,
+      rules: {
+        reuseComponents: true,
+        removeComponents: true,
+        moveAllToComponents: true,
+        moveDuplicatesToComponents: false,
+      },
+      disableOptimizationFor: {
+        schema: false,
+      },
+    })
+    console.log('report', report)
+    // docStringified = docStringified.replace('$ref:', '')
+    // delete (<Record<string, any>>docStringified)[String('x-parser-spec-stringified')];
+    
+
+    console.log('optimizedDocument', optimizedDocument)
     await addFileToService(
       serviceId,
       {
         fileName: path.split('/').pop() || 'asyncapi.yml',
-        content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
+        content: yaml.dump(JSON.parse(stringify(document)), { noRefs: true, replacer: replacerFunction }),
+        // content: optimizedDocument
+        // content: yaml.dump(document.json(), { noRefs: true }),
+        // content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
       },
       version
     );

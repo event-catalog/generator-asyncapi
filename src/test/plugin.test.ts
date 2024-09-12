@@ -17,9 +17,9 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       process.env.PROJECT_DIR = catalogDir;
     });
 
-    afterEach(async () => {
-      await fs.rm(join(catalogDir), { recursive: true });
-    });
+    // afterEach(async () => {
+    //   await fs.rm(join(catalogDir), { recursive: true });
+    // });
 
     describe('domains', () => {
       it('if a domain is defined in the AsyncAPI file but the versions do not match, the existing domain is version and a new one is created', async () => {

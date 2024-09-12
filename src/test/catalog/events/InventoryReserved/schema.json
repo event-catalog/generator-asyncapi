@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "properties": {
+        "orderId": {
+            "type": "string",
+            "description": "Unique identifier for the order",
+            "x-parser-schema-id": "<anonymous-schema-24>"
+        },
+        "reservationId": {
+            "type": "string",
+            "description": "Unique identifier for the inventory reservation",
+            "x-parser-schema-id": "<anonymous-schema-25>"
+        },
+        "status": {
+            "type": "string",
+            "description": "Status of the inventory reservation",
+            "x-parser-schema-id": "<anonymous-schema-26>"
+        }
+    },
+    "x-parser-schema-id": "<anonymous-schema-23>"
+}

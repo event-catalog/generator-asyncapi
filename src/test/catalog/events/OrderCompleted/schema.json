@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "properties": {
+        "orderId": {
+            "type": "string",
+            "description": "Unique identifier for the order",
+            "x-parser-schema-id": "<anonymous-schema-17>"
+        },
+        "completionTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the order was completed",
+            "x-parser-schema-id": "<anonymous-schema-18>"
+        }
+    },
+    "x-parser-schema-id": "<anonymous-schema-16>"
+}

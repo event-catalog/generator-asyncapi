@@ -9,36 +9,50 @@ operations:
     action: send
     channel:
       $ref: '#/channels/orderCreated'
+    messages:
+      - $ref: '#/channels/orderCreated/messages/OrderCreated'
 
   sendOrderUpdated:
     action: send
     channel:
       $ref: '#/channels/orderUpdated'
+    messages:
+      - $ref: '#/channels/orderUpdated/messages/OrderUpdated'
 
   sendOrderCancelled:
     action: send
     channel:
       $ref: '#/channels/orderCancelled'
+    messages:
+      - $ref: '#/channels/orderCancelled/messages/OrderCancelled'
 
   sendOrderCompleted:
     action: send
     channel:
       $ref: '#/channels/orderCompleted'
+    messages:
+      - $ref: '#/channels/orderCompleted/messages/OrderCompleted'
 
   receivePaymentProcessed:
     action: receive
     channel:
       $ref: '#/channels/paymentProcessed'
+    messages:
+      - $ref: '#/channels/paymentProcessed/messages/PaymentProcessed'
 
   receiveInventoryReserved:
     action: receive
     channel:
       $ref: '#/channels/inventoryReserved'
+    messages:
+      - $ref: '#/channels/inventoryReserved/messages/InventoryReserved'
 
   receiveShipmentDelivered:
     action: receive
     channel:
       $ref: '#/channels/shipmentDelivered'
+    messages:
+      - $ref: '#/channels/shipmentDelivered/messages/ShipmentDelivered'
 
 channels:
   orderCreated:
