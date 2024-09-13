@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 1.0.1
+
+### Patch Changes
+
+- f769fa8: chore(plugin): changed asyncapi test file names
+
 ## 1.0.0
 
 ### Major Changes
