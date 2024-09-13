@@ -42,8 +42,8 @@ generators: [
       '@eventcatalog/generator-asyncapi',
       {
         services: [
-          { path: path.join(__dirname, 'asyncapi-files', 'orders-service.yml')}
-        ]
+          { path: path.join(__dirname, 'asyncapi-files', 'orders-service.asyncapi.yml')}
+        ],
         domain: { id: 'orders', name: 'Orders', version: '0.0.1' },
       },
     ],
@@ -51,7 +51,7 @@ generators: [
 ...
 ```
 
-In this example the generator will read the `orders-service.yml` file and populate services and messages inside your catalog. It will add the service to the domain `Orders`.
+In this example the generator will read the `orders-service.asyncapi.yml` file and populate services and messages inside your catalog. It will add the service to the domain `Orders`.
 
 You can see an example in the [eventcatalog-asyncapi-example](https://github.com/event-catalog/eventcatalog-asyncapi-example/blob/main/eventcatalog.config.js) repo
 

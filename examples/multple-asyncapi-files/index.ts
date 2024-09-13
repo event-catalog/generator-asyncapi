@@ -7,7 +7,10 @@ async function main() {
   await plugin(
     {},
     {
-      services: [{ path: join(__dirname, 'account-service.yml') }, { path: join(__dirname, 'orders-service.yml') }],
+      services: [
+        { path: join(__dirname, 'account-service.asyncapi.yml') },
+        { path: join(__dirname, 'orders-service.asyncapi.yml') },
+      ],
       domain: { id: 'orders', name: 'Street', version: '1.0.0' },
     }
   );

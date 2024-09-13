@@ -1,7 +1,7 @@
 import { MessageInterface, AsyncAPIDocumentInterface } from '@asyncapi/parser';
 import { getFileExtentionFromSchemaFormat } from './schemas';
 
-export const defaultMarkdown = (document: AsyncAPIDocumentInterface, message: MessageInterface) => {
+export const defaultMarkdown = (_document: AsyncAPIDocumentInterface, message: MessageInterface) => {
   return `
 ## Architecture
 <NodeGraph />
