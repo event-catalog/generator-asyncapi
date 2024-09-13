@@ -41,7 +41,9 @@ generators: [
     [
       '@eventcatalog/generator-asyncapi',
       {
-        path: [path.join(__dirname, 'asyncapi-files', 'orders-service.asyncapi.yml'),
+        services: [
+          { path: path.join(__dirname, 'asyncapi-files', 'orders-service.asyncapi.yml')}
+        ],
         domain: { id: 'orders', name: 'Orders', version: '0.0.1' },
       },
     ],

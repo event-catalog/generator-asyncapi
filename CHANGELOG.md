@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 1.0.0
+
+### Major Changes
+
+- adea394: feat(plugin): added support to specify custom service ids
+
 ## 0.1.4
 
 ### Patch Changes
