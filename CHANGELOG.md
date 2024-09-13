@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 0.1.4
+
+### Patch Changes
+
+- 4ceb838: feat(plugin): added support for avro schemas
+
 ## 0.1.3
 
 ### Patch Changes

@@ -7,10 +7,18 @@ export const defaultMarkdown = (document: AsyncAPIDocumentInterface, message: Me
 <NodeGraph />
 
 ${
-  messageHasSchema(message)
+  messageHasSchema(message) && messageIsJSON(message)
     ? `
 ## Schema
 <SchemaViewer file="${getSchemaFileName(message)}" title="Message Schema" maxHeight="500" />
+`
+    : ''
+}
+${
+  messageHasSchema(message) && !messageIsJSON(message)
+    ? `
+## Schema
+<Schema file="${getSchemaFileName(message)}" title="Message Schema" maxHeight="500" />
 `
     : ''
 }
@@ -42,6 +50,11 @@ export const getSummary = (message: MessageInterface) => {
 
 export const messageHasSchema = (message: MessageInterface) => {
   return message.hasPayload() && message.schemaFormat();
+};
+
+export const messageIsJSON = (message: MessageInterface) => {
+  const fileName = getSchemaFileName(message);
+  return fileName.endsWith('.json');
 };
 
 export const getSchemaFileName = (message: MessageInterface) => {

@@ -1,8 +1,4 @@
-// import utils from '@eventcatalog/sdk';
-import { Parser, fromFile, stringify, unstringify } from '@asyncapi/parser';
-import { Optimizer } from '@asyncapi/optimizer';
-import { Report, Output } from '@asyncapi/optimizer'
-const parser = new Parser();
+import { Parser, fromFile, stringify } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
 import {
@@ -18,6 +14,14 @@ import chalk from 'chalk';
 import checkLicense from './checkLicense';
 import argv from 'minimist';
 import yaml from 'js-yaml';
+
+// AsyncAPI Parsers
+import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
+
+const parser = new Parser();
+
+// register avro schema support
+parser.registerSchemaParser(AvroSchemaParser());
 
 const cliArgs = argv(process.argv.slice(2));
 
@@ -252,34 +256,11 @@ export default async (config: any, options: Props) => {
       return value;
     };
 
-    let optimizer = new Optimizer(document.json());
-    const report: Report = await optimizer.getReport()
-    const optimizedDocument = optimizer.getOptimizedDocument({
-      output: Output.YAML,
-      rules: {
-        reuseComponents: true,
-        removeComponents: true,
-        moveAllToComponents: true,
-        moveDuplicatesToComponents: false,
-      },
-      disableOptimizationFor: {
-        schema: false,
-      },
-    })
-    console.log('report', report)
-    // docStringified = docStringified.replace('$ref:', '')
-    // delete (<Record<string, any>>docStringified)[String('x-parser-spec-stringified')];
-    
-
-    console.log('optimizedDocument', optimizedDocument)
     await addFileToService(
       serviceId,
       {
         fileName: path.split('/').pop() || 'asyncapi.yml',
         content: yaml.dump(JSON.parse(stringify(document)), { noRefs: true, replacer: replacerFunction }),
-        // content: optimizedDocument
-        // content: yaml.dump(document.json(), { noRefs: true }),
-        // content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
       },
       version
     );
