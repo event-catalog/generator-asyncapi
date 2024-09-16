@@ -508,5 +508,36 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(schema).toBeDefined();
       });
     });
+
+    describe('AsyncAPI files as JSON', () => {
+      it('parses the JSON spec file and writes the schema as JSON to the given service ', async () => {
+        const { getEvent, getService } = utils(catalogDir);
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'example-as-json.json') }] });
+
+        const service = await getService('user-service', '1.0.0');
+        const event = await getEvent('userupdated', '1.0.0');
+
+        expect(service).toBeDefined();
+        expect(event).toBeDefined();
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'User Service', 'example-as-json.json'), 'utf-8');
+        expect(schema).toBeDefined();
+
+        // verify its JSON
+        const parsedJSON = JSON.parse(schema);
+        expect(parsedJSON).toBeDefined();
+
+        expect(parsedJSON).toEqual(
+          expect.objectContaining({
+            info: {
+              title: 'User Service',
+              version: '1.0.0',
+              description: 'CRUD based API to handle User interactions for users of Kitchenshelf app.',
+            },
+          })
+        );
+      });
+    });
   });
 });

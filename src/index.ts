@@ -255,7 +255,9 @@ export default async (config: any, options: Props) => {
       serviceId,
       {
         fileName: service.path.split('/').pop() || 'asyncapi.yml',
-        content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
+        content: service.path.endsWith('.json')
+          ? JSON.stringify(document.meta().asyncapi.parsed, null, 4)
+          : yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
       },
       version
     );
