@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 1.0.2
+
+### Patch Changes
+
+- 579aa26: feat(plugin): added support for json asyncapi files, now write json b…
+
 ## 1.0.1
 
 ### Patch Changes
