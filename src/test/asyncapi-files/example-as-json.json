@@ -1,0 +1,59 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "User Service",
+    "version": "1.0.0",
+    "description": "CRUD based API to handle User interactions for users of Kitchenshelf app."
+  },
+  "operations": {
+    "sendUserUpdated": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/userUpdated"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/userUpdated/messages/UserUpdated"
+        }
+      ]
+    }
+  },
+  "channels": {
+    "userUpdated": {
+      "address": "user/updated",
+      "messages": {
+        "UserUpdated": {
+          "$ref": "#/components/messages/UserUpdated"
+        }
+      }
+    }
+  },
+  "components": {
+    "messages": {
+      "UserUpdated": {
+        "description": "Holds information about the user that has been updated.",
+        "x-eventcatalog-message-type": "event",
+        "headers": {
+          "type": "object",
+          "properties": {
+            "ec-message-type": {
+              "type": "string",
+              "default": "event",
+              "description": "Type of message for EventCatalog"
+            }
+          }
+        },
+        "payload": {
+          "$id": "UserUpdated",
+          "type": "object",
+          "properties": {
+            "userId": {
+              "type": "string",
+              "description": "Unique identifier for the user updated"
+            }
+          }
+        }
+      }
+    }
+  }
+}

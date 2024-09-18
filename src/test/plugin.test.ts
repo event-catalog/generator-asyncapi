@@ -277,10 +277,10 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
       it('the original asyncapi file is added to the service instead of parsed version', async () => {
         const { getService } = utils(catalogDir);
-        await plugin(config, {  
+        await plugin(config, {
           services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
-          keepOriginalSpec: true
-         });
+          saveParsedSpecFile: false,
+        });
 
         const service = await getService('account-service', '1.0.0');
 
@@ -289,6 +289,22 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
         expect(schema).toBeDefined();
         expect(schema).not.toContain('x-parser-schema-id');
+      });
+
+      it('the original asyncapi file is not added but the parsed version', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
+          saveParsedSpecFile: true,
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).toContain('x-parser-schema-id');
       });
 
       it('the asyncapi specification file path is added to the service which can be rendered and visualized in eventcatalog', async () => {
@@ -522,6 +538,37 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         // Check file schema.avsc
         const schema = await fs.readFile(join(catalogDir, 'events', 'userSignedUp', 'schema.avsc'));
         expect(schema).toBeDefined();
+      });
+    });
+
+    describe('AsyncAPI files as JSON', () => {
+      it('parses the JSON spec file and writes the schema as JSON to the given service ', async () => {
+        const { getEvent, getService } = utils(catalogDir);
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'example-as-json.json') }] });
+
+        const service = await getService('user-service', '1.0.0');
+        const event = await getEvent('userupdated', '1.0.0');
+
+        expect(service).toBeDefined();
+        expect(event).toBeDefined();
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'User Service', 'example-as-json.json'), 'utf-8');
+        expect(schema).toBeDefined();
+
+        // verify its JSON
+        const parsedJSON = JSON.parse(schema);
+        expect(parsedJSON).toBeDefined();
+
+        expect(parsedJSON).toEqual(
+          expect.objectContaining({
+            info: {
+              title: 'User Service',
+              version: '1.0.0',
+              description: 'CRUD based API to handle User interactions for users of Kitchenshelf app.',
+            },
+          })
+        );
       });
     });
   });
