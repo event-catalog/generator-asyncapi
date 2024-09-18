@@ -2,6 +2,7 @@
 import { Parser, fromFile } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
+import { readFile } from 'node:fs/promises';
 import {
   defaultMarkdown as generateMarkdownForMessage,
   getMessageName,
@@ -41,6 +42,7 @@ type Props = {
   services: Service[];
   domain?: Domain;
   debug?: boolean;
+  keepOriginalSpec?: boolean;
 };
 
 export default async (config: any, options: Props) => {
@@ -255,7 +257,10 @@ export default async (config: any, options: Props) => {
       serviceId,
       {
         fileName: service.path.split('/').pop() || 'asyncapi.yml',
-        content: yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
+        content: options.keepOriginalSpec ? 
+          await readFile(service.path, 'utf8') :
+          yaml.dump(document.meta().asyncapi.parsed, { noRefs: true })
+
       },
       version
     );

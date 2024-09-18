@@ -275,6 +275,22 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(schema).toBeDefined();
       });
 
+      it('the original asyncapi file is added to the service instead of parsed version', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {  
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
+          keepOriginalSpec: true
+         });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).not.toContain('x-parser-schema-id');
+      });
+
       it('the asyncapi specification file path is added to the service which can be rendered and visualized in eventcatalog', async () => {
         const { getService } = utils(catalogDir);
         await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
