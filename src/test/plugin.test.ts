@@ -341,16 +341,29 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(service.specifications?.openapiPath).toEqual('simple.asyncapi.yml');
       });
 
-      it('if an `id` value is given with the service, then the generator uses that id and does not generate one from the title', async () => {
-        const { getService } = utils(catalogDir);
+      describe('service options', () => {
+        describe('config option: id', () => {
+          it('if an `id` value is given with the service, then the generator uses that id and does not generate one from the title', async () => {
+            const { getService } = utils(catalogDir);
 
-        await plugin(config, {
-          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'custom-id' }],
+            await plugin(config, {
+              services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'custom-id' }],
+            });
+
+            const service = await getService('custom-id', '1.0.0');
+
+            expect(service).toBeDefined();
+          });
         });
+        describe('config option: folderName', () => {
+          it('if the `folderName` value is given in the service config options, then the service is written to that foldername', async () => {
+            await plugin(config, {
+              services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'custom-id', folderName: 'HelloWorld' }],
+            });
 
-        const service = await getService('custom-id', '1.0.0');
-
-        expect(service).toBeDefined();
+            expect(await fs.readdir(join(catalogDir, 'services'))).toContain('HelloWorld');
+          });
+        });
       });
     });
 

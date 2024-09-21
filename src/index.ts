@@ -36,6 +36,7 @@ type Domain = {
 type Service = {
   id?: string;
   path: string;
+  folderName?: string;
 };
 
 type Props = {
@@ -250,7 +251,7 @@ export default async (config: any, options: Props) => {
           asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
         },
       },
-      { path: document.info().title() }
+      { path: service.folderName || document.info().title() }
     );
 
     await addFileToService(

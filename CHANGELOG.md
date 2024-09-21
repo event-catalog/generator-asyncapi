@@ -1,5 +1,17 @@
 # @eventcatalog/sdk
 
+## 1.0.4
+
+### Patch Changes
+
+- ebc881e: feat(plugin): added new folderName property for services
+
+## 1.0.3
+
+### Patch Changes
+
+- 77e9a8a: feat(plugin): setting the service id on the plugin now uses that id f…
+
 ## 1.0.2
 
 ### Patch Changes
