@@ -19,6 +19,7 @@ import yaml from 'js-yaml';
 
 // AsyncAPI Parsers
 import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
+import { join } from 'node:path';
 
 const parser = new Parser();
 
@@ -44,6 +45,17 @@ type Props = {
   domain?: Domain;
   debug?: boolean;
   saveParsedSpecFile?: boolean;
+};
+
+const loadSpecFiles = (specifications: {}, speciFiles: { fileName: string; content: string }[], service: Service) => {
+  Object.values(specifications).map(async (value) => {
+    if (typeof value === 'string') {
+      speciFiles.push({
+        fileName: value,
+        content: await readFile(join(service.path.split('/').slice(0, -1).join('/'), value), 'utf8'),
+      });
+    }
+  });
 };
 
 export default async (config: any, options: Props) => {
@@ -103,7 +115,7 @@ export default async (config: any, options: Props) => {
     const sends = [];
     const receives = [];
     let specifications = {};
-
+    const speciFiles: { fileName: string; content: string }[] = [];
     let serviceMarkdown = generateMarkdownForService(document);
 
     // Manage domain
@@ -231,6 +243,7 @@ export default async (config: any, options: Props) => {
       if (latestServiceInCatalog.version === version) {
         serviceMarkdown = latestServiceInCatalog.markdown;
         specifications = latestServiceInCatalog.specifications ?? {};
+        loadSpecFiles(specifications, speciFiles, service);
         await rmService(document.info().title());
       }
     }
@@ -254,6 +267,9 @@ export default async (config: any, options: Props) => {
       { path: service.folderName || document.info().title() }
     );
 
+    speciFiles.map(async (value) => {
+      await addFileToService(serviceId, value, version);
+    });
     await addFileToService(
       serviceId,
       {

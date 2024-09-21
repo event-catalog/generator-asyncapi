@@ -321,7 +321,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
       it('the asyncapi specification file path is added to an existing service version without overwriting existing specifications except asyncapi spec', async () => {
         // Create a service with the same name and version as the AsyncAPI file for testing
-        const { writeService, getService } = utils(catalogDir);
+        const { writeService, getService, addFileToService } = utils(catalogDir);
         const existingVersion = '1.0.0';
         await writeService(
           {
@@ -329,16 +329,29 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             version: existingVersion,
             name: 'Random Name',
             markdown: 'Here is my original markdown, please do not override this!',
-            specifications: { openapiPath: 'simple.asyncapi.yml' },
+            specifications: { openapiPath: 'simple.openapi.yml' },
           },
           { path: 'Account Service' }
+        );
+
+        await addFileToService(
+          'account-service',
+          {
+            fileName: 'simple.openapi.yml',
+            content: 'Some content',
+          },
+          existingVersion
         );
 
         await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
 
         const service = await getService('account-service', existingVersion);
+
         expect(service.specifications?.asyncapiPath).toEqual('simple.asyncapi.yml');
-        expect(service.specifications?.openapiPath).toEqual('simple.asyncapi.yml');
+        expect(service.specifications?.openapiPath).toEqual('simple.openapi.yml');
+
+        const existingSpecFile = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.openapi.yml'));
+        expect(existingSpecFile).toBeDefined();
       });
 
       describe('service options', () => {
