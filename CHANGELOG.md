@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 1.0.4
+
+### Patch Changes
+
+- ebc881e: feat(plugin): added new folderName property for services
+
 ## 1.0.3
 
 ### Patch Changes
