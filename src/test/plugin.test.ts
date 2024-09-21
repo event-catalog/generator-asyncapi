@@ -320,6 +320,14 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         expect(service).toBeDefined();
       });
+
+      it('if an `id` value is given with the service, that id is used as the filename of the service', async () => {
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'custom-id' }],
+        });
+
+        expect(await fs.readdir(join(catalogDir, 'services'))).toContain('custom-id');
+      });
     });
 
     describe('messages', () => {

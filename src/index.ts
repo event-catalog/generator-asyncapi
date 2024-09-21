@@ -248,7 +248,7 @@ export default async (config: any, options: Props) => {
           asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
         },
       },
-      { path: document.info().title() }
+      { path: service.id || document.info().title() }
     );
 
     await addFileToService(
