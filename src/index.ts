@@ -267,19 +267,22 @@ export default async (config: any, options: Props) => {
       { path: service.folderName || document.info().title() }
     );
 
+    const GetParsedSpec = () =>
+      service.path.endsWith('.json')
+        ? JSON.stringify(document.meta().asyncapi.parsed, null, 4)
+        : yaml.dump(document.meta().asyncapi.parsed, { noRefs: true });
+
+    const GetOriginalSpec = async () => await readFile(service.path, 'utf8');
+
     speciFiles.map(async (value) => {
       await addFileToService(serviceId, value, version);
     });
+
     await addFileToService(
       serviceId,
       {
         fileName: service.path.split('/').pop() || 'asyncapi.yml',
-        content:
-          (options.saveParsedSpecFile ?? true)
-            ? service.path.endsWith('.json')
-              ? JSON.stringify(document.meta().asyncapi.parsed, null, 4)
-              : yaml.dump(document.meta().asyncapi.parsed, { noRefs: true })
-            : await readFile(service.path, 'utf8'),
+        content: (options.saveParsedSpecFile ?? false) ? GetParsedSpec() : await GetOriginalSpec(),
       },
       version
     );

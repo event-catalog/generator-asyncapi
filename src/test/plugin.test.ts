@@ -275,6 +275,21 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(schema).toBeDefined();
       });
 
+      it('the original asyncapi file is added to the service by default instead of parsed version', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).not.toContain('x-parser-schema-id');
+      });
+
       it('the original asyncapi file is added to the service instead of parsed version', async () => {
         const { getService } = utils(catalogDir);
         await plugin(config, {
@@ -538,7 +553,10 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       });
 
       it('if the AsyncAPI has any $ref these are not saved to the service. The servive AsyncAPI is has no $ref', async () => {
-        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'ref-example.asyncapi.yml') }] });
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'ref-example.asyncapi.yml') }],
+          saveParsedSpecFile: true,
+        });
 
         const asyncAPIFile = await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.asyncapi.yml'));
         const expected = await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.asyncapi.yml'));
