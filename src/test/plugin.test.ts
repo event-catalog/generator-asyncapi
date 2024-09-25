@@ -177,7 +177,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       });
 
       it('when the AsyncAPI service is already defined in EventCatalog and the versions match, folderName is considered', async () => {
-
         // Create a service with the same name and version as the AsyncAPI file for testing
         const { writeService } = utils(catalogDir);
         const existingVersion = '1.0.0';
@@ -192,8 +191,9 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           { path: 'my-custom-folder' }
         );
 
-        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), folderName: 'my-custom-folder' }] });
-
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), folderName: 'my-custom-folder' }],
+        });
       });
 
       it('when the AsyncAPI service is already defined in EventCatalog and the versions match, the markdown is persisted and not overwritten', async () => {
