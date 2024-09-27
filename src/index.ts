@@ -34,9 +34,9 @@ type Domain = {
 };
 
 type Service = {
-  id?: string;
+  id: string;
   path: string;
-  folderName?: string;
+  name?: string;
 };
 
 type Props = {
@@ -74,10 +74,8 @@ export default async (config: any, options: Props) => {
     getSpecificationFilesForService,
   } = utils(process.env.PROJECT_DIR);
 
-  const services = options.services;
-
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
-  const saveParsedSpecFile = options.saveParsedSpecFile ?? false;
+  const { services, saveParsedSpecFile = false } = options;
   // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
 
@@ -99,13 +97,13 @@ export default async (config: any, options: Props) => {
     const operations = document.allOperations();
     const documentTags = document.info().tags().all() || [];
 
-    const serviceId = service.id || slugify(document.info().title(), { lower: true, strict: true });
+    const serviceId = service.id;
+    const serviceName = service.name || document.info().title();
     const version = document.info().version();
 
     // What messages does this service send and receive
     const sends = [];
     const receives = [];
-    const speciFiles: { fileName: string; content: string }[] = [];
 
     let serviceSpecifications = {};
     let serviceSpecificationsFiles = [];
@@ -222,7 +220,7 @@ export default async (config: any, options: Props) => {
     // Check if service is already defined... if the versions do not match then create service.
     const latestServiceInCatalog = await getService(serviceId, 'latest');
 
-    console.log(chalk.blue(`Processing service: ${document.info().title()} (v${version})`));
+    console.log(chalk.blue(`Processing service: ${serviceId} (v${version})`));
 
     if (latestServiceInCatalog) {
       serviceMarkdown = latestServiceInCatalog.markdown;
@@ -238,28 +236,25 @@ export default async (config: any, options: Props) => {
         serviceMarkdown = latestServiceInCatalog.markdown;
         serviceSpecifications = latestServiceInCatalog.specifications ?? {};
         serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
-        await rmService(service.folderName || document.info().title());
+        await rmService(serviceId);
       }
     }
 
-    await writeService(
-      {
-        id: serviceId,
-        name: document.info().title(),
-        version: version,
-        summary: getServiceSummary(document),
-        badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
-        markdown: serviceMarkdown,
-        sends,
-        receives,
-        schemaPath: service.path.split('/').pop() || 'asyncapi.yml',
-        specifications: {
-          ...serviceSpecifications,
-          asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
-        },
+    await writeService({
+      id: serviceId,
+      name: serviceName,
+      version: version,
+      summary: getServiceSummary(document),
+      badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
+      markdown: serviceMarkdown,
+      sends,
+      receives,
+      schemaPath: service.path.split('/').pop() || 'asyncapi.yml',
+      specifications: {
+        ...serviceSpecifications,
+        asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
       },
-      { path: service.folderName || document.info().title() }
-    );
+    });
 
     // What files need added to the service (speficiation files)
     const specFiles = [
@@ -284,7 +279,7 @@ export default async (config: any, options: Props) => {
 
     console.log(chalk.cyan(` - Service (v${version}) created`));
 
-    console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${document.info().title()} (v${version})`));
+    console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${serviceId} (v${version})`));
   }
 
   await checkLicense();
