@@ -1,5 +1,13 @@
 # @eventcatalog/sdk
 
+## 2.0.0
+
+### Major Changes
+
+- f269307: feat(plugin): breaking change - service id is mandatory and foldernam…
+- 477c55e: feat(plugin): asyncapi files are now raw by default, users have to opt into parsed outputs
+  feat(plugin): specifications for services are now persisted on services.
+
 ## 1.0.5
 
 ### Patch Changes
