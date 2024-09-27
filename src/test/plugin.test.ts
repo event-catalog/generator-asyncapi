@@ -229,29 +229,78 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(newService).toBeDefined();
       });
 
-      it('any message with the operation `send` is added to the service. The service publishes this message.', async () => {
-        const { getService } = utils(catalogDir);
+      describe('sends', () => {
+        it('any message with the operation `send` is added to the service. The service publishes this message.', async () => {
+          const { getService } = utils(catalogDir);
 
-        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+          await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
 
-        const service = await getService('account-service', '1.0.0');
+          const service = await getService('account-service', '1.0.0');
 
-        expect(service.sends).toHaveLength(2);
-        expect(service.sends).toEqual([
-          { id: 'usersignedup', version: '1.0.0' },
-          { id: 'usersignedout', version: '1.0.0' },
-        ]);
+          expect(service.sends).toHaveLength(2);
+          expect(service.sends).toEqual([
+            { id: 'usersignedup', version: '1.0.0' },
+            { id: 'usersignedout', version: '1.0.0' },
+          ]);
+        });
+
+        it('if the service is already defined and is sending messages these are persisted', async () => {
+          const { writeService, getService } = utils(catalogDir);
+
+          await writeService({
+            id: 'account-service',
+            version: '1.0.0',
+            name: 'Account Service',
+            markdown: '',
+            sends: [{ id: 'userloggedin', version: '1.0.0' }],
+          });
+
+          await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+          const service = await getService('account-service', '1.0.0');
+
+          expect(service.sends).toHaveLength(3);
+          expect(service.sends).toEqual([
+            { id: 'userloggedin', version: '1.0.0' },
+            { id: 'usersignedup', version: '1.0.0' },
+            { id: 'usersignedout', version: '1.0.0' },
+          ]);
+        });
       });
 
-      it('any message with the operation `receive` is added to the service. The service receives this message.', async () => {
-        const { getService } = utils(catalogDir);
+      describe('receives', () => {
+        it('any message with the operation `receive` is added to the service. The service receives this message.', async () => {
+          const { getService } = utils(catalogDir);
 
-        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+          await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
 
-        const service = await getService('account-service', '1.0.0');
+          const service = await getService('account-service', '1.0.0');
 
-        expect(service.receives).toHaveLength(1);
-        expect(service.receives).toEqual([{ id: 'signupuser', version: '1.0.0' }]);
+          expect(service.receives).toHaveLength(1);
+          expect(service.receives).toEqual([{ id: 'signupuser', version: '1.0.0' }]);
+        });
+
+        it('if the service is already defined and is receiving messages these are persisted', async () => {
+          const { writeService, getService } = utils(catalogDir);
+
+          await writeService({
+            id: 'account-service',
+            version: '1.0.0',
+            name: 'Account Service',
+            markdown: '',
+            receives: [{ id: 'userloggedin', version: '1.0.0' }],
+          });
+
+          await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+          const service = await getService('account-service', '1.0.0');
+
+          expect(service.receives).toHaveLength(2);
+          expect(service.receives).toEqual([
+            { id: 'userloggedin', version: '1.0.0' },
+            { id: 'signupuser', version: '1.0.0' },
+          ]);
+        });
       });
 
       it('the asyncapi file is added to the service which can be downloaded in eventcatalog', async () => {
