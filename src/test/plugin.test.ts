@@ -334,9 +334,9 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(schema).toBeDefined();
       });
 
-      it('the asyncapi specification file path is added to an existing service version without overwriting existing specifications except asyncapi spec', async () => {
+      it('if the service already has specifications attached to it, the asyncapi spec file is added to this list', async () => {
         // Create a service with the same name and version as the AsyncAPI file for testing
-        const { writeService, getService, addFileToService } = utils(catalogDir);
+        const { writeService, getService, addFileToService, getSpecificationFilesForService } = utils(catalogDir);
         const existingVersion = '1.0.0';
         await writeService(
           {
@@ -361,12 +361,87 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
 
         const service = await getService('account-service', existingVersion);
+        const specs = await getSpecificationFilesForService('account-service', existingVersion);
 
-        expect(service.specifications?.asyncapiPath).toEqual('simple.asyncapi.yml');
-        expect(service.specifications?.openapiPath).toEqual('simple.openapi.yml');
+        expect(specs).toHaveLength(2);
+        expect(specs[0]).toEqual({
+          key: 'openapiPath',
+          content: 'Some content',
+          fileName: 'simple.openapi.yml',
+          path: expect.anything(),
+        });
+        expect(specs[1]).toEqual({
+          key: 'asyncapiPath',
+          content: expect.anything(),
+          fileName: 'simple.asyncapi.yml',
+          path: expect.anything(),
+        });
 
-        const existingSpecFile = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.openapi.yml'));
-        expect(existingSpecFile).toBeDefined();
+        expect(service.specifications).toEqual({
+          openapiPath: 'simple.openapi.yml',
+          asyncapiPath: 'simple.asyncapi.yml',
+        });
+      });
+
+      it('if the service already has specifications attached to it including an AsyncAPI spec file the asyncapi file is overriden', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService, getService, addFileToService, getSpecificationFilesForService } = utils(catalogDir);
+        const existingVersion = '1.0.0';
+        await writeService(
+          {
+            id: 'account-service',
+            version: existingVersion,
+            name: 'Random Name',
+            markdown: 'Here is my original markdown, please do not override this!',
+            specifications: { openapiPath: 'simple.openapi.yml', asyncapiPath: 'old.asyncapi.yml' },
+          },
+          { path: 'Account Service' }
+        );
+
+        await addFileToService(
+          'account-service',
+          {
+            fileName: 'simple.openapi.yml',
+            content: 'Some content',
+          },
+          existingVersion
+        );
+
+        await addFileToService(
+          'account-service',
+          {
+            fileName: 'old.asyncapi.yml',
+            content: 'old contents',
+          },
+          existingVersion
+        );
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
+
+        const service = await getService('account-service', existingVersion);
+        const specs = await getSpecificationFilesForService('account-service', existingVersion);
+
+        expect(specs).toHaveLength(2);
+        expect(specs[0]).toEqual({
+          key: 'openapiPath',
+          content: 'Some content',
+          fileName: 'simple.openapi.yml',
+          path: expect.anything(),
+        });
+        expect(specs[1]).toEqual({
+          key: 'asyncapiPath',
+          content: expect.anything(),
+          fileName: 'simple.asyncapi.yml',
+          path: expect.anything(),
+        });
+
+        // Verify that the asyncapi file is overriden content
+        expect(specs[1].content).not.toEqual('old contents');
+
+        expect(service.specifications).toEqual({
+          openapiPath: 'simple.openapi.yml',
+          asyncapiPath: 'simple.asyncapi.yml',
+        });
       });
 
       describe('service options', () => {
