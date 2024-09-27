@@ -249,8 +249,8 @@ export default async (config: any, options: Props) => {
       summary: getServiceSummary(document),
       badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
       markdown: serviceMarkdown,
-      sends,
-      receives,
+      sends: uniqueMessages(sends),
+      receives: uniqueMessages(receives),
       schemaPath: service.path.split('/').pop() || 'asyncapi.yml',
       specifications: {
         ...serviceSpecifications,
@@ -295,3 +295,16 @@ const getParsedSpecFile = (service: Service, document: AsyncAPIDocumentInterface
 };
 
 const getRawSpecFile = async (service: Service) => await readFile(service.path, 'utf8');
+
+const uniqueMessages = (messages: { id: string; version: string }[]): { id: string; version: string }[] => {
+  const uniqueSet = new Set();
+
+  return messages.filter((message) => {
+    const key = `${message.id}-${message.version}`;
+    if (!uniqueSet.has(key)) {
+      uniqueSet.add(key);
+      return true;
+    }
+    return false;
+  });
+};
