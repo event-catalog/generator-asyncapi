@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 1.0.5
+
+### Patch Changes
+
+- 1968f1c: fix(plugin): when refreshing service definitions the folder name is taken into consideration
+
 ## 1.0.4
 
 ### Patch Changes
