@@ -194,6 +194,10 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         await plugin(config, {
           services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), folderName: 'my-custom-folder' }],
         });
+
+        // Check the file exists in the custom folder name
+        const serviceFile = await fs.readFile(join(catalogDir, 'services', 'my-custom-folder', 'index.md'));
+        expect(serviceFile).toBeDefined();
       });
 
       it('when the AsyncAPI service is already defined in EventCatalog and the versions match, the markdown is persisted and not overwritten', async () => {
