@@ -3,6 +3,7 @@ import utils from '@eventcatalog/sdk';
 import plugin from '../index';
 import { join } from 'node:path';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 
 // Fake eventcatalog config
 const config = {};
@@ -18,7 +19,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
     });
 
     afterEach(async () => {
-      await fs.rm(join(catalogDir), { recursive: true });
+      if (existsSync(catalogDir)) await fs.rm(join(catalogDir), { recursive: true });
     });
 
     describe('domains', () => {
@@ -443,8 +444,8 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             expect(service).toBeDefined();
           });
         });
-        describe('config option: name', () => {
-          it('if the `name` value is given in the service config options, then the service name is set to the config value', async () => {
+        describe('config options', () => {
+          it('[name] if the `name` value is given in the service config options, then the service name is set to the config value', async () => {
             const { getService } = utils(catalogDir);
 
             await plugin(config, {
@@ -459,6 +460,34 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
             const service = await getService('account-service', '1.0.0');
             expect(service.name).toEqual('Awesome account service');
+          });
+
+          it('[id] if the `id` not provided in the service config options, The generator throw an explicit error', async () => {
+            await expect(
+              plugin(config, {
+                services: [
+                  {
+                    path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'),
+                    name: 'Awesome account service',
+                  } as any,
+                ],
+              })
+            ).rejects.toThrow('The service id is required');
+          });
+          it('[services] if the `services` not provided in options, The generator throw an explicit error', async () => {
+            await expect(plugin(config, {} as any)).rejects.toThrow('Please provide correct services configuration');
+          });
+          it('[path] if the `path` not provided in service config options, The generator throw an explicit error', async () => {
+            await expect(
+              plugin(config, {
+                services: [
+                  {
+                    name: 'Awesome account service',
+                    id: 'awsome-service',
+                  } as any,
+                ],
+              })
+            ).rejects.toThrow('The service path is required. please provide the path to specification file');
           });
         });
       });
