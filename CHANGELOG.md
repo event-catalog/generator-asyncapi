@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.0.2
+
+### Patch Changes
+
+- 1c3ee0a: feat(plugin): persist messages the service receives and sends
+
 ## 2.0.1
 
 ### Patch Changes
