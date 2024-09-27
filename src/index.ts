@@ -47,6 +47,17 @@ type Props = {
   saveParsedSpecFile?: boolean;
 };
 
+const validateOptions = (options: Props) => {
+  if (!options.services) {
+    throw new Error('Please provide correct services configuration');
+  }
+  if (options.services.some((service) => !service.id)) {
+    throw new Error('The service id is required. please provide a service id');
+  }
+  if (options.services.some((service) => !service.path)) {
+    throw new Error('The service path is required. please provide the path to specification file');
+  }
+};
 export default async (config: any, options: Props) => {
   if (!process.env.PROJECT_DIR) {
     throw new Error('Please provide catalog url (env variable PROJECT_DIR)');
@@ -77,9 +88,9 @@ export default async (config: any, options: Props) => {
 
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
   const { services, saveParsedSpecFile = false } = options;
+  validateOptions(options);
   // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
-
   for (const service of services) {
     console.log(chalk.gray(`Processing ${service.path}`));
 
@@ -99,6 +110,7 @@ export default async (config: any, options: Props) => {
     const documentTags = document.info().tags().all() || [];
 
     const serviceId = service.id;
+
     const serviceName = service.name || document.info().title();
     const version = document.info().version();
 
