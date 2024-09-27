@@ -176,6 +176,30 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         );
       });
 
+      it('when the AsyncAPI service is already defined in EventCatalog and the versions match, folderName is considered', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService } = utils(catalogDir);
+        const existingVersion = '1.0.0';
+        await writeService(
+          {
+            id: 'account-service',
+            version: existingVersion,
+            name: 'Custom folderName',
+            markdown: 'This service is stored in a folder with custom name',
+            specifications: { openapiPath: 'simple.asyncapi.yml' },
+          },
+          { path: 'my-custom-folder' }
+        );
+
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), folderName: 'my-custom-folder' }],
+        });
+
+        // Check the file exists in the custom folder name
+        const serviceFile = await fs.readFile(join(catalogDir, 'services', 'my-custom-folder', 'index.md'));
+        expect(serviceFile).toBeDefined();
+      });
+
       it('when the AsyncAPI service is already defined in EventCatalog and the versions match, the markdown is persisted and not overwritten', async () => {
         // Create a service with the same name and version as the AsyncAPI file for testing
         const { writeService, getService } = utils(catalogDir);
