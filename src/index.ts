@@ -102,8 +102,8 @@ export default async (config: any, options: Props) => {
     const version = document.info().version();
 
     // What messages does this service send and receive
-    const sends = [];
-    const receives = [];
+    let sends = [];
+    let receives = [];
 
     let serviceSpecifications = {};
     let serviceSpecificationsFiles = [];
@@ -235,6 +235,8 @@ export default async (config: any, options: Props) => {
         // we want to preserve the markdown any any spec files that are already there
         serviceMarkdown = latestServiceInCatalog.markdown;
         serviceSpecifications = latestServiceInCatalog.specifications ?? {};
+        sends = latestServiceInCatalog.sends ? [...latestServiceInCatalog.sends, ...sends] : sends;
+        receives = latestServiceInCatalog.receives ? [...latestServiceInCatalog.receives, ...receives] : receives;
         serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
         await rmService(serviceId);
       }
