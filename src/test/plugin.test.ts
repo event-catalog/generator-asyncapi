@@ -186,7 +186,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             version: existingVersion,
             name: 'Custom folderName',
             markdown: 'This service is stored in a folder with custom name',
-            specifications: { openapiPath: 'simple.asyncapi.yml' },
           },
           { path: 'my-custom-folder' }
         );
