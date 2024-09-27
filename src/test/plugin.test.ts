@@ -186,7 +186,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             version: existingVersion,
             name: 'Custom folderName',
             markdown: 'This service is stored in a folder with custom name',
-            specifications: { openapiPath: 'simple.asyncapi.yml' },
           },
           { path: 'my-custom-folder' }
         );
@@ -299,6 +298,53 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(schema).toBeDefined();
       });
 
+      it('the original asyncapi file is added to the service by default instead of parsed version', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).not.toContain('x-parser-schema-id');
+      });
+
+      it('the original asyncapi file is added to the service instead of parsed version', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
+          saveParsedSpecFile: false,
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).not.toContain('x-parser-schema-id');
+      });
+
+      it('the original asyncapi file is not added but the parsed version', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }],
+          saveParsedSpecFile: true,
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'Account Service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).toContain('x-parser-schema-id');
+      });
+
       it('the asyncapi specification file path is added to the service which can be rendered and visualized in eventcatalog', async () => {
         const { getService } = utils(catalogDir);
         await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
@@ -311,9 +357,9 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(schema).toBeDefined();
       });
 
-      it('the asyncapi specification file path is added to an existing service version without overwriting existing specifications except asyncapi spec', async () => {
+      it('if the service already has specifications attached to it, the asyncapi spec file is added to this list', async () => {
         // Create a service with the same name and version as the AsyncAPI file for testing
-        const { writeService, getService } = utils(catalogDir);
+        const { writeService, getService, addFileToService, getSpecificationFilesForService } = utils(catalogDir);
         const existingVersion = '1.0.0';
         await writeService(
           {
@@ -321,16 +367,104 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             version: existingVersion,
             name: 'Random Name',
             markdown: 'Here is my original markdown, please do not override this!',
-            specifications: { openapiPath: 'simple.asyncapi.yml' },
+            specifications: { openapiPath: 'simple.openapi.yml' },
           },
           { path: 'Account Service' }
+        );
+
+        await addFileToService(
+          'account-service',
+          {
+            fileName: 'simple.openapi.yml',
+            content: 'Some content',
+          },
+          existingVersion
         );
 
         await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
 
         const service = await getService('account-service', existingVersion);
-        expect(service.specifications?.asyncapiPath).toEqual('simple.asyncapi.yml');
-        expect(service.specifications?.openapiPath).toEqual('simple.asyncapi.yml');
+        const specs = await getSpecificationFilesForService('account-service', existingVersion);
+
+        expect(specs).toHaveLength(2);
+        expect(specs[0]).toEqual({
+          key: 'openapiPath',
+          content: 'Some content',
+          fileName: 'simple.openapi.yml',
+          path: expect.anything(),
+        });
+        expect(specs[1]).toEqual({
+          key: 'asyncapiPath',
+          content: expect.anything(),
+          fileName: 'simple.asyncapi.yml',
+          path: expect.anything(),
+        });
+
+        expect(service.specifications).toEqual({
+          openapiPath: 'simple.openapi.yml',
+          asyncapiPath: 'simple.asyncapi.yml',
+        });
+      });
+
+      it('if the service already has specifications attached to it including an AsyncAPI spec file the asyncapi file is overriden', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService, getService, addFileToService, getSpecificationFilesForService } = utils(catalogDir);
+        const existingVersion = '1.0.0';
+        await writeService(
+          {
+            id: 'account-service',
+            version: existingVersion,
+            name: 'Random Name',
+            markdown: 'Here is my original markdown, please do not override this!',
+            specifications: { openapiPath: 'simple.openapi.yml', asyncapiPath: 'old.asyncapi.yml' },
+          },
+          { path: 'Account Service' }
+        );
+
+        await addFileToService(
+          'account-service',
+          {
+            fileName: 'simple.openapi.yml',
+            content: 'Some content',
+          },
+          existingVersion
+        );
+
+        await addFileToService(
+          'account-service',
+          {
+            fileName: 'old.asyncapi.yml',
+            content: 'old contents',
+          },
+          existingVersion
+        );
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml') }] });
+
+        const service = await getService('account-service', existingVersion);
+        const specs = await getSpecificationFilesForService('account-service', existingVersion);
+
+        expect(specs).toHaveLength(2);
+        expect(specs[0]).toEqual({
+          key: 'openapiPath',
+          content: 'Some content',
+          fileName: 'simple.openapi.yml',
+          path: expect.anything(),
+        });
+        expect(specs[1]).toEqual({
+          key: 'asyncapiPath',
+          content: expect.anything(),
+          fileName: 'simple.asyncapi.yml',
+          path: expect.anything(),
+        });
+
+        // Verify that the asyncapi file is overriden content
+        expect(specs[1].content).not.toEqual('old contents');
+
+        expect(service.specifications).toEqual({
+          openapiPath: 'simple.openapi.yml',
+          asyncapiPath: 'simple.asyncapi.yml',
+        });
       });
 
       describe('service options', () => {
@@ -517,7 +651,10 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       });
 
       it('if the AsyncAPI has any $ref these are not saved to the service. The servive AsyncAPI is has no $ref', async () => {
-        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'ref-example.asyncapi.yml') }] });
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'ref-example.asyncapi.yml') }],
+          saveParsedSpecFile: true,
+        });
 
         const asyncAPIFile = await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.asyncapi.yml'));
         const expected = await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.asyncapi.yml'));

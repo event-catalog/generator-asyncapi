@@ -1,7 +1,8 @@
 // import utils from '@eventcatalog/sdk';
-import { Parser, fromFile } from '@asyncapi/parser';
+import { AsyncAPIDocumentInterface, Parser, fromFile } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import slugify from 'slugify';
+import { readFile } from 'node:fs/promises';
 import {
   defaultMarkdown as generateMarkdownForMessage,
   getMessageName,
@@ -42,6 +43,7 @@ type Props = {
   services: Service[];
   domain?: Domain;
   debug?: boolean;
+  saveParsedSpecFile?: boolean;
 };
 
 export default async (config: any, options: Props) => {
@@ -69,11 +71,14 @@ export default async (config: any, options: Props) => {
     addSchemaToEvent,
     addFileToService,
     versionDomain,
+    getSpecificationFilesForService,
   } = utils(process.env.PROJECT_DIR);
 
   const services = options.services;
-  // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
 
+  // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
+  const saveParsedSpecFile = options.saveParsedSpecFile ?? false;
+  // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
 
   for (const service of services) {
@@ -100,8 +105,10 @@ export default async (config: any, options: Props) => {
     // What messages does this service send and receive
     const sends = [];
     const receives = [];
-    let specifications = {};
+    const speciFiles: { fileName: string; content: string }[] = [];
 
+    let serviceSpecifications = {};
+    let serviceSpecificationsFiles = [];
     let serviceMarkdown = generateMarkdownForService(document);
 
     // Manage domain
@@ -227,8 +234,10 @@ export default async (config: any, options: Props) => {
 
       // Match found, override it
       if (latestServiceInCatalog.version === version) {
+        // we want to preserve the markdown any any spec files that are already there
         serviceMarkdown = latestServiceInCatalog.markdown;
-        specifications = latestServiceInCatalog.specifications ?? {};
+        serviceSpecifications = latestServiceInCatalog.specifications ?? {};
+        serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
         await rmService(service.folderName || document.info().title());
       }
     }
@@ -245,23 +254,33 @@ export default async (config: any, options: Props) => {
         receives,
         schemaPath: service.path.split('/').pop() || 'asyncapi.yml',
         specifications: {
-          ...specifications,
+          ...serviceSpecifications,
           asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
         },
       },
       { path: service.folderName || document.info().title() }
     );
 
-    await addFileToService(
-      serviceId,
+    // What files need added to the service (speficiation files)
+    const specFiles = [
+      // add any previous spec files to the list
+      ...serviceSpecificationsFiles,
       {
+        content: saveParsedSpecFile ? getParsedSpecFile(service, document) : await getRawSpecFile(service),
         fileName: service.path.split('/').pop() || 'asyncapi.yml',
-        content: service.path.endsWith('.json')
-          ? JSON.stringify(document.meta().asyncapi.parsed, null, 4)
-          : yaml.dump(document.meta().asyncapi.parsed, { noRefs: true }),
       },
-      version
-    );
+    ];
+
+    for (const specFile of specFiles) {
+      await addFileToService(
+        serviceId,
+        {
+          fileName: specFile.fileName,
+          content: specFile.content,
+        },
+        version
+      );
+    }
 
     console.log(chalk.cyan(` - Service (v${version}) created`));
 
@@ -270,3 +289,12 @@ export default async (config: any, options: Props) => {
 
   await checkLicense();
 };
+
+const getParsedSpecFile = (service: Service, document: AsyncAPIDocumentInterface) => {
+  const isSpecFileJSON = service.path.endsWith('.json');
+  return isSpecFileJSON
+    ? JSON.stringify(document.meta().asyncapi.parsed, null, 4)
+    : yaml.dump(document.meta().asyncapi.parsed, { noRefs: true });
+};
+
+const getRawSpecFile = async (service: Service) => await readFile(service.path, 'utf8');
