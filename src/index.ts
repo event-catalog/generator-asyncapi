@@ -229,7 +229,7 @@ export default async (config: any, options: Props) => {
       if (latestServiceInCatalog.version === version) {
         serviceMarkdown = latestServiceInCatalog.markdown;
         specifications = latestServiceInCatalog.specifications ?? {};
-        await rmService(document.info().title());
+        await rmService(service.folderName || document.info().title());
       }
     }
 
