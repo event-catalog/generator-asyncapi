@@ -251,8 +251,11 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const service = await getService('account-service', '1.0.0');
 
-        expect(service.receives).toHaveLength(1);
-        expect(service.receives).toEqual([{ id: 'signupuser', version: '1.0.0' }]);
+        expect(service.receives).toHaveLength(2);
+        expect(service.receives).toEqual([
+          { id: 'signupuser', version: '1.0.0' },
+          { id: 'usersubscribed', version: '1.0.0' },
+        ]);
       });
 
       it('the asyncapi file is added to the service which can be downloaded in eventcatalog', async () => {
@@ -585,7 +588,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(newEvent).toBeDefined();
       });
 
-      it('when a the message already exists in EventCatalog the markdown is persisted and not overwritten', async () => {
+      it('when a message already exists in EventCatalog the markdown is persisted and not overwritten', async () => {
         const { writeEvent, getEvent } = utils(catalogDir);
 
         await writeEvent({
@@ -615,6 +618,18 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const newEvent = await getEvent('usersignedup', '1.0.0');
         expect(newEvent.markdown).toEqual('please dont override me!');
+      });
+
+      it('any message with the operation `receive` and using the custom `ec-external-message` does not create new or modify existing message.', async () => {
+        const { getEvent } = utils(catalogDir);
+        const { getService } = utils(catalogDir);
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const service = await getService('account-service', '1.0.0');
+        const newEvent = await getEvent('usersubscribed', 'latest');
+        expect(newEvent).toBeUndefined();
+        expect(service.receives).toHaveLength(2);
       });
 
       describe('schemas', () => {
