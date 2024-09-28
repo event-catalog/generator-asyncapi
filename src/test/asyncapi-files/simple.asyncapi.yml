@@ -29,6 +29,11 @@ channels:
         $ref: '#/components/messages/GetUserByEmail'
       CheckEmailAvailability:
         $ref: '#/components/messages/CheckEmailAvailability'
+  userSubscription:
+    address: user/subscription
+    messages:
+      UserSubscribed:
+        $ref: '#/components/messages/UserSubscribed'
 operations:
   sendUserSignedup:
     action: send
@@ -60,6 +65,12 @@ operations:
       $ref: '#/channels/userSignedup'
     messages:
       - $ref: '#/channels/userSignedup/messages/CheckEmailAvailability'
+  onUserSubscribed:
+    action: receive
+    channel:
+      $ref: '#/channels/userSubscription'
+    messages:
+      - $ref: '#/channels/userSubscription/messages/UserSubscribed'
 components:
   messages:
     UserSignedUp:
@@ -142,3 +153,15 @@ components:
             type: string
             format: email
             description: Email to check for availability
+    UserSubscribed:
+      description: 'User Subscribed to newsletters'
+      x-eventcatalog-role: client
+      tags:
+        - name: 'New'
+          description: 'New event'
+      payload:
+        type: object
+        properties:
+          email:
+            type: string
+            description: email of the user

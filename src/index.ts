@@ -1,5 +1,5 @@
 // import utils from '@eventcatalog/sdk';
-import { AsyncAPIDocumentInterface, Parser, fromFile, fromURL } from '@asyncapi/parser';
+import { AsyncAPIDocumentInterface, MessageInterface, Parser, fromFile, fromURL } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import { readFile } from 'node:fs/promises';
 import {
@@ -195,6 +195,9 @@ export default async (config: any, options: Props) => {
     for (const operation of operations) {
       for (const message of operation.messages()) {
         const eventType = (message.extensions().get('x-eventcatalog-message-type')?.value() as EventType) || 'event';
+        const isMessageProvider = hasRoleOf(message, 'provider');
+        const isRecived = operation.action() === 'receive' || operation.action() === 'subscribe';
+        const isSent = operation.action() === 'send' || operation.action() === 'publish';
 
         const messageId = message.id().toLowerCase();
 
@@ -213,61 +216,59 @@ export default async (config: any, options: Props) => {
         let messageMarkdown = generateMarkdownForMessage(document, message);
         const badges = message.tags().all() || [];
 
-        // Check if the message already exists in the catalog
-        const catalogedMessage = await getMessage(message.id().toLowerCase(), 'latest');
-
         console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${version})`));
 
-        if (catalogedMessage) {
-          messageMarkdown = catalogedMessage.markdown;
-          // if the version matches, we can override the message but keep markdown as it  was
-          if (catalogedMessage.version === version) {
-            await rmMessageById(messageId, version);
-          } else {
-            // if the version does not match, we need to version the message
-            await versionMessage(messageId);
-            console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
+        if (isMessageProvider) {
+          // Check if the message already exists in the catalog
+          const catalogedMessage = await getMessage(message.id().toLowerCase(), 'latest');
+
+          if (catalogedMessage) {
+            messageMarkdown = catalogedMessage.markdown;
+            // if the version matches, we can override the message but keep markdown as it  was
+            if (catalogedMessage.version === version) {
+              await rmMessageById(messageId, version);
+            } else {
+              // if the version does not match, we need to version the message
+              await versionMessage(messageId);
+              console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
+            }
           }
-        }
 
-        // Write the message to the catalog
-        await writeMessage(
-          {
-            id: messageId,
-            version: version,
-            name: getMessageName(message),
-            summary: getMessageSummary(message),
-            markdown: messageMarkdown,
-            badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
-            schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
-          },
-          {
-            path: message.id(),
-          }
-        );
-
-        console.log(chalk.cyan(` - Message (v${version}) created`));
-
-        // Check if the message has a payload, if it does then document in EventCatalog
-        if (messageHasSchema(message)) {
-          addSchemaToMessage(
-            messageId,
+          // Write the message to the catalog
+          await writeMessage(
             {
-              fileName: getSchemaFileName(message),
-              schema: JSON.stringify(message.payload()?.json(), null, 4),
+              id: messageId,
+              version: version,
+              name: getMessageName(message),
+              summary: getMessageSummary(message),
+              markdown: messageMarkdown,
+              badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
+              schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
             },
-            version
+            {
+              path: message.id(),
+            }
           );
-          console.log(chalk.cyan(` - Schema added to message (v${version})`));
-        }
 
+          console.log(chalk.cyan(` - Message (v${version}) created`));
+          // Check if the message has a payload, if it does then document in EventCatalog
+          if (messageHasSchema(message)) {
+            addSchemaToMessage(
+              messageId,
+              {
+                fileName: getSchemaFileName(message),
+                schema: JSON.stringify(message.payload()?.json(), null, 4),
+              },
+              version
+            );
+            console.log(chalk.cyan(` - Schema added to message (v${version})`));
+          }
+        } else {
+          console.log(chalk.yellow(` - Skipping external message: ${getMessageName(message)}(v${version})`));
+        }
         // Add the message to the correct array
-        if (operation.action() === 'send' || operation.action() === 'publish') {
-          sends.push({ id: messageId, version: version });
-        }
-        if (operation.action() === 'receive' || operation.action() === 'subscribe') {
-          receives.push({ id: messageId, version: version });
-        }
+        if (isSent) sends.push({ id: messageId, version: version });
+        if (isRecived) receives.push({ id: messageId, version: version });
       }
     }
 
@@ -362,4 +363,20 @@ const getRawSpecFile = async (service: Service) => {
   } else {
     return await readFile(service.path, 'utf8');
   }
+};
+/**
+ * Verify the role of the message in spec
+ *
+ * client: consuming a contract
+ * provider: producing a contract
+ *
+ * @param message
+ * @param role Possible values are 'client' and 'provider'
+ * @returns boolean
+ *
+ * defult is provider
+ */
+const hasRoleOf = (message: MessageInterface, role: 'client' | 'provider'): boolean => {
+  const value = message.extensions().get('x-eventcatalog-role')?.value() || 'provider';
+  return value === 'provider';
 };
