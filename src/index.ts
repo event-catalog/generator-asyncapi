@@ -160,15 +160,20 @@ export default async (config: any, options: Props) => {
     for (const operation of operations) {
       for (const message of operation.messages()) {
         const eventType = message.extensions().get('x-eventcatalog-message-type')?.value() || 'event';
+        const isEvent = eventType === 'event';
+        const eventVisibility = message.extensions().get('x-eventcatalog-visibility')?.value() || 'internal';
+        const isExternal = eventVisibility === 'external';
+        const isRecived = operation.action() === 'receive' || operation.action() === 'subscribe';
+        const isSent = operation.action() === 'send' || operation.action() === 'publish';
 
         const messageId = message.id().toLowerCase();
 
         let messageMarkdown = generateMarkdownForMessage(document, message);
-        const writeMessage = eventType === 'event' ? writeEvent : writeCommand;
-        const versionMessage = eventType === 'event' ? versionEvent : versionCommand;
-        const getMessage = eventType === 'event' ? getEvent : getCommand;
-        const rmMessageById = eventType === 'event' ? rmEventById : rmCommandById;
-        const addSchemaToMessage = eventType === 'event' ? addSchemaToEvent : addSchemaToCommand;
+        const writeMessage = isEvent ? writeEvent : writeCommand;
+        const versionMessage = isEvent ? versionEvent : versionCommand;
+        const getMessage = isEvent ? getEvent : getCommand;
+        const rmMessageById = isEvent ? rmEventById : rmCommandById;
+        const addSchemaToMessage = isEvent ? addSchemaToEvent : addSchemaToCommand;
         const badges = message.tags().all() || [];
 
         // Check if the message already exists in the catalog
@@ -176,56 +181,54 @@ export default async (config: any, options: Props) => {
 
         console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${version})`));
 
-        if (catalogedMessage) {
-          messageMarkdown = catalogedMessage.markdown;
-          // if the version matches, we can override the message but keep markdown as it  was
-          if (catalogedMessage.version === version) {
-            await rmMessageById(messageId, version);
-          } else {
-            // if the version does not match, we need to version the message
-            await versionMessage(messageId);
-            console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
+        if (isExternal) {
+          console.log(chalk.yellow(` - Skipping external received message (v${version})`));
+        } else {
+          if (catalogedMessage) {
+            messageMarkdown = catalogedMessage.markdown;
+            // if the version matches, we can override the message but keep markdown as it  was
+            if (catalogedMessage.version === version) {
+              await rmMessageById(messageId, version);
+            } else {
+              // if the version does not match, we need to version the message
+              await versionMessage(messageId);
+              console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
+            }
           }
-        }
 
-        // Write the message to the catalog
-        await writeMessage(
-          {
-            id: messageId,
-            version: version,
-            name: getMessageName(message),
-            summary: getMessageSummary(message),
-            markdown: messageMarkdown,
-            badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
-            schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
-          },
-          {
-            path: message.id(),
-          }
-        );
-
-        console.log(chalk.cyan(` - Message (v${version}) created`));
-
-        // Check if the message has a payload, if it does then document in EventCatalog
-        if (messageHasSchema(message)) {
-          addSchemaToMessage(
-            messageId,
+          // Write the message to the catalog
+          await writeMessage(
             {
-              fileName: getSchemaFileName(message),
-              schema: JSON.stringify(message.payload()?.json(), null, 4),
+              id: messageId,
+              version: version,
+              name: getMessageName(message),
+              summary: getMessageSummary(message),
+              markdown: messageMarkdown,
+              badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
+              schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
             },
-            version
+            {
+              path: message.id(),
+            }
           );
-          console.log(chalk.cyan(` - Schema added to message (v${version})`));
-        }
 
+          console.log(chalk.cyan(` - Message (v${version}) created`));
+          // Check if the message has a payload, if it does then document in EventCatalog
+          if (messageHasSchema(message)) {
+            addSchemaToMessage(
+              messageId,
+              {
+                fileName: getSchemaFileName(message),
+                schema: JSON.stringify(message.payload()?.json(), null, 4),
+              },
+              version
+            );
+            console.log(chalk.cyan(` - Schema added to message (v${version})`));
+          }
+        }
         // Add the message to the correct array
-        if (operation.action() === 'send' || operation.action() === 'publish') {
-          sends.push({ id: messageId, version: version });
-        }
-        if (operation.action() === 'receive' || operation.action() === 'subscribe') {
-          receives.push({ id: messageId, version: version });
-        }
+        if (isSent) sends.push({ id: messageId, version: version });
+        if (isRecived) receives.push({ id: messageId, version: version });
       }
     }
 
