@@ -43,7 +43,7 @@ generators: [
       {
         services: [
           { path: path.join(__dirname, 'asyncapi-files', 'orders-service.asyncapi.yml'), id: 'Orders Service'},
-          { path: path.join(__dirname, 'asyncapi-files', 'accounts-service.asyncapi.yml', id: 'Accounts Service', name: 'Awesome Accounts Service')}
+          { path: path.join(__dirname, 'asyncapi-files', 'accounts-service.asyncapi.yml'), id: 'Accounts Service', name: 'Awesome Accounts Service')}
         ],
         domain: { id: 'orders', name: 'Orders', version: '0.0.1' },
       },
