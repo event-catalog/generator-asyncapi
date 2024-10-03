@@ -1,5 +1,15 @@
 # @eventcatalog/sdk
 
+## 2.1.0
+
+### Minor Changes
+
+- 542aaed: chore(plugin): added windows tests to cicd
+
+### Patch Changes
+
+- 4985626: chore(plugin): fixed path issues with windows
+
 ## 2.0.2
 
 ### Patch Changes
