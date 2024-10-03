@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.1.1
+
+### Patch Changes
+
+- 9ee9650: chore(plugin): removed code to set unique messages as sdk now does this
+
 ## 2.1.0
 
 ### Minor Changes
