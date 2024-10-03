@@ -700,10 +700,15 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           saveParsedSpecFile: true,
         });
 
-        const asyncAPIFile = await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.asyncapi.yml'));
-        const expected = await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.asyncapi.yml'));
+        const asyncAPIFile = (
+          await fs.readFile(join(catalogDir, 'services', 'Test Service', 'ref-example.asyncapi.yml'))
+        ).toString();
+        const expected = (await fs.readFile(join(asyncAPIExamplesDir, 'ref-example-without-refs.asyncapi.yml'))).toString();
 
-        expect(asyncAPIFile).toEqual(expected);
+        // Normalize line endings
+        const normalizeLineEndings = (str: string) => str.replace(/\r\n/g, '\n');
+
+        expect(normalizeLineEndings(asyncAPIFile)).toEqual(normalizeLineEndings(expected));
       });
     });
 

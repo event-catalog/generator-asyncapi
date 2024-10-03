@@ -19,6 +19,7 @@ import yaml from 'js-yaml';
 
 // AsyncAPI Parsers
 import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
+import path from 'path';
 
 const parser = new Parser();
 
@@ -242,6 +243,10 @@ export default async (config: any, options: Props) => {
       }
     }
 
+    // ...
+
+    const fileName = path.basename(service.path);
+
     await writeService({
       id: serviceId,
       name: serviceName,
@@ -251,10 +256,10 @@ export default async (config: any, options: Props) => {
       markdown: serviceMarkdown,
       sends: uniqueMessages(sends),
       receives: uniqueMessages(receives),
-      schemaPath: service.path.split('/').pop() || 'asyncapi.yml',
+      schemaPath: fileName || 'asyncapi.yml',
       specifications: {
         ...serviceSpecifications,
-        asyncapiPath: service.path.split('/').pop() || 'asyncapi.yml',
+        asyncapiPath: fileName || 'asyncapi.yml',
       },
     });
 
@@ -264,7 +269,7 @@ export default async (config: any, options: Props) => {
       ...serviceSpecificationsFiles,
       {
         content: saveParsedSpecFile ? getParsedSpecFile(service, document) : await getRawSpecFile(service),
-        fileName: service.path.split('/').pop() || 'asyncapi.yml',
+        fileName: path.basename(service.path) || 'asyncapi.yml',
       },
     ];
 
