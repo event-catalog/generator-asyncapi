@@ -25,6 +25,11 @@ channels:
         $ref: '#/components/messages/SignUpUser'
       UserSignedOut:
         $ref: '#/components/messages/UserSignedOut'
+  userSubscription:
+    address: user/subscription
+    messages:
+      UserSubscribed:
+        $ref: '#/components/messages/UserSubscribed'
 operations:
   sendUserSignedup:
     action: send
@@ -44,6 +49,12 @@ operations:
       $ref: '#/channels/userSignedup'
     messages:
       - $ref: '#/channels/userSignedup/messages/UserSignedOut'
+  onUserSubscribed:
+    action: receive
+    channel:
+      $ref: '#/channels/userSubscription'
+    messages:
+      - $ref: '#/channels/userSubscription/messages/UserSubscribed'
 components:
   messages:
     UserSignedUp:
@@ -100,3 +111,15 @@ components:
             type: string
             format: email
             description: Email of the user
+    UserSubscribed:
+      description: 'User Subscribed to newsletters'
+      x-eventcatalog-visibility: external
+      tags:
+        - name: 'New'
+          description: 'New event'
+      payload:
+        type: object
+        properties:
+          email:
+            type: string
+            description: email of the user
