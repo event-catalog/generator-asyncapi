@@ -3,6 +3,7 @@ import utils from '@eventcatalog/sdk';
 import plugin from '../index';
 import { join } from 'node:path';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 
 // Fake eventcatalog config
 const config = {};
@@ -18,7 +19,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
     });
 
     afterEach(async () => {
-      await fs.rm(join(catalogDir), { recursive: true });
+      if (existsSync(catalogDir)) await fs.rm(join(catalogDir), { recursive: true });
     });
 
     describe('domains', () => {
@@ -501,38 +502,110 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           asyncapiPath: 'simple.asyncapi.yml',
         });
       });
+    });
 
-      describe('service options', () => {
-        describe('config option: id', () => {
-          it('if an `id` value is given with the service, then the generator uses that id and does not generate one from the title', async () => {
-            const { getService } = utils(catalogDir);
+    describe('generator options', () => {
+      describe('config option: id', () => {
+        it('if an `id` value is given with the service, then the generator uses that id and does not generate one from the title', async () => {
+          const { getService } = utils(catalogDir);
 
-            await plugin(config, {
-              services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service', id: 'custom-id' }],
-            });
-
-            const service = await getService('custom-id', '1.0.0');
-
-            expect(service).toBeDefined();
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service', id: 'custom-id' }],
           });
-        });
-        describe('config option: name', () => {
-          it('if the `name` value is given in the service config options, then the service name is set to the config value', async () => {
-            const { getService } = utils(catalogDir);
 
-            await plugin(config, {
+          const service = await getService('custom-id', '1.0.0');
+
+          expect(service).toBeDefined();
+        });
+      });
+      describe('config options', () => {
+        it('[name] if the `name` value is given in the service config options, then the service name is set to the config value', async () => {
+          const { getService } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [
+              {
+                path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'),
+                id: 'account-service',
+                name: 'Awesome account service',
+              },
+            ],
+          });
+
+          const service = await getService('account-service', '1.0.0');
+          expect(service.name).toEqual('Awesome account service');
+        });
+
+        it('[id] if the `id` not provided in the service config options, The generator throw an explicit error', async () => {
+          await expect(
+            plugin(config, {
               services: [
                 {
                   path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'),
-                  id: 'account-service',
                   name: 'Awesome account service',
-                },
+                } as any,
               ],
-            });
-
-            const service = await getService('account-service', '1.0.0');
-            expect(service.name).toEqual('Awesome account service');
-          });
+            })
+          ).rejects.toThrow('The service id is required');
+        });
+        it('[services] if the `services` not provided in options, The generator throw an explicit error', async () => {
+          await expect(plugin(config, {} as any)).rejects.toThrow('Please provide correct services configuration');
+        });
+        it('[services] if the `services` is undefiend in options, The generator throw an explicit error', async () => {
+          await expect(plugin(config, { services: undefined } as any)).rejects.toThrow(
+            'Please provide correct services configuration'
+          );
+        });
+        it('[services::path] if the `services::path` not provided in options, The generator throw an explicit error', async () => {
+          await expect(plugin(config, { services: [{ id: 'service_id' }] } as any)).rejects.toThrow(
+            'The service path is required. please provide the path to specification file'
+          );
+        });
+        it('[services::id] if the `services::id` not provided in options, The generator throw an explicit error', async () => {
+          await expect(plugin(config, { services: [{ path: 'path/to/spec' }] } as any)).rejects.toThrow(
+            'The service id is required. please provide the service id'
+          );
+        });
+        it('[path] if the `path` not provided in service config options, The generator throw an explicit error', async () => {
+          await expect(
+            plugin(config, {
+              services: [
+                {
+                  name: 'Awesome account service',
+                  id: 'awsome-service',
+                } as any,
+              ],
+            })
+          ).rejects.toThrow('The service path is required. please provide the path to specification file');
+        });
+        it('[services::saveParsedSpecFile] if the `services::saveParsedSpecFile` not a boolean in options, The generator throw an explicit error', async () => {
+          await expect(
+            plugin(config, { services: [{ path: 'path/to/spec', id: 'sevice_id' }], saveParsedSpecFile: 'true' } as any)
+          ).rejects.toThrow('The saveParsedSpecFile is not a boolean in options');
+        });
+        it('[domain::id] if the `domain::id` not provided in options, The generator throw an explicit error', async () => {
+          await expect(
+            plugin(config, {
+              domain: { name: 'domain_name', version: '1.0.0' },
+              services: [{ path: 'path/to/spec', id: 'sevice_id' }],
+            } as any)
+          ).rejects.toThrow('The domain id is required. please provide a domain id');
+        });
+        it('[domain::name] if the `domain::name` not provided in options, The generator throw an explicit error', async () => {
+          await expect(
+            plugin(config, {
+              domain: { id: 'domain_name', version: '1.0.0' },
+              services: [{ path: 'path/to/spec', id: 'sevice_id' }],
+            } as any)
+          ).rejects.toThrow('The domain name is required. please provide a domain name');
+        });
+        it('[domain::version] if the `domain::version` not provided in options, The generator throw an explicit error', async () => {
+          await expect(
+            plugin(config, {
+              domain: { id: 'domain_name', name: 'domain_name' },
+              services: [{ path: 'path/to/spec', id: 'sevice_id' }],
+            } as any)
+          ).rejects.toThrow('The domain version is required. please provide a domain version');
         });
       });
     });
