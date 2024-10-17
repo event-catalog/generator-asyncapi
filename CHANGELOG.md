@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.1.2
+
+### Patch Changes
+
+- cce1dd0: chore(plugin): added validation for CLI inputs using zod
+
 ## 2.1.1
 
 ### Patch Changes
