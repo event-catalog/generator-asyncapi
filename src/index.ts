@@ -1,7 +1,6 @@
 // import utils from '@eventcatalog/sdk';
 import { AsyncAPIDocumentInterface, Parser, fromFile } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
-import slugify from 'slugify';
 import { readFile } from 'node:fs/promises';
 import {
   defaultMarkdown as generateMarkdownForMessage,
@@ -16,6 +15,7 @@ import chalk from 'chalk';
 import checkLicense from './checkLicense';
 import argv from 'minimist';
 import yaml from 'js-yaml';
+import { z } from 'zod';
 
 // AsyncAPI Parsers
 import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
@@ -25,28 +25,39 @@ const parser = new Parser();
 
 // register avro schema support
 parser.registerSchemaParser(AvroSchemaParser());
-
 const cliArgs = argv(process.argv.slice(2));
 
-type Domain = {
-  id: string;
-  name: string;
-  version: string;
-};
+const optionsSchema = z.object({
+  services: z.array(
+    z.object({
+      id: z.string({ required_error: 'The service id is required. please provide the service id' }),
+      path: z.string({ required_error: 'The service path is required. please provide the path to specification file' }),
+      name: z.string().optional(),
+    }),
+    { message: 'Please provide correct services configuration' }
+  ),
+  domain: z
+    .object({
+      id: z.string({ required_error: 'The domain id is required. please provide a domain id' }),
+      name: z.string({ required_error: 'The domain name is required. please provide a domain name' }),
+      version: z.string({ required_error: 'The domain version is required. please provide a domain version' }),
+    })
+    .optional(),
+  debug: z.boolean().optional(),
+  saveParsedSpecFile: z.boolean({ invalid_type_error: 'The saveParsedSpecFile is not a boolean in options' }).optional(),
+});
 
-type Service = {
-  id: string;
-  path: string;
-  name?: string;
-};
+type Props = z.infer<typeof optionsSchema>;
+type Domain = z.infer<typeof optionsSchema>['domain'];
+type Service = z.infer<typeof optionsSchema>['services'][0];
 
-type Props = {
-  services: Service[];
-  domain?: Domain;
-  debug?: boolean;
-  saveParsedSpecFile?: boolean;
+const validateOptions = (options: Props) => {
+  try {
+    optionsSchema.parse(options);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) throw new Error(JSON.stringify(error.issues, null, 2));
+  }
 };
-
 export default async (config: any, options: Props) => {
   if (!process.env.PROJECT_DIR) {
     throw new Error('Please provide catalog url (env variable PROJECT_DIR)');
@@ -76,10 +87,10 @@ export default async (config: any, options: Props) => {
   } = utils(process.env.PROJECT_DIR);
 
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
+  validateOptions(options);
   const { services, saveParsedSpecFile = false } = options;
   // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
-
   for (const service of services) {
     console.log(chalk.gray(`Processing ${service.path}`));
 
@@ -99,6 +110,7 @@ export default async (config: any, options: Props) => {
     const documentTags = document.info().tags().all() || [];
 
     const serviceId = service.id;
+
     const serviceName = service.name || document.info().title();
     const version = document.info().version();
 
