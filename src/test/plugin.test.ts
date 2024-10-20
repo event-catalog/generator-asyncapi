@@ -516,6 +516,68 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           asyncapiPath: 'simple.asyncapi.yml',
         });
       });
+
+      it('if the service already has higher version the new one with lowert version will be created as versioned', async () => {
+        const { getService, writeService } = utils(catalogDir);
+
+        await writeService(
+          {
+            id: 'account-service',
+            version: '2.0.0',
+            name: 'account-service',
+            markdown: 'My content',
+          },
+          { path: 'account-service' }
+        );
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const latestservice = await getService('account-service', '2.0.0');
+        const serviceMarkdown = (
+          await fs.readFile(join(catalogDir, 'services', 'account-service', 'versioned', '1.0.0', 'index.md'), 'utf8')
+        ).toString();
+        expect(latestservice).toBeDefined();
+        expect(serviceMarkdown).toBeDefined();
+        expect(serviceMarkdown).toContain('version: 1.0.0');
+      });
+
+      it('if the service version already exists enrich the service with the new one new service', async () => {
+        const { getService, writeService } = utils(catalogDir);
+
+        await writeService(
+          {
+            id: 'account-service',
+            version: '2.0.0',
+            name: 'account-service',
+            markdown: 'My content',
+            sends: [{ id: 'strange-event', version: '2.0.0' }],
+          },
+          { path: 'account-service' }
+        );
+
+        await writeService(
+          {
+            id: 'account-service',
+            version: '1.0.0',
+            name: 'account-service',
+            markdown: 'My content',
+            sends: [{ id: 'strange-event', version: '1.0.0' }],
+          },
+          { path: 'account-service/versioned/1.0.0' }
+        );
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const service = await getService('account-service', '1.0.0');
+        const latestservice = await getService('account-service', '2.0.0');
+
+        expect(service).toBeDefined();
+        expect(latestservice).toBeDefined();
+
+        expect(service.sends?.length).toBe(3);
+        expect(service.receives?.length).toBe(3);
+        expect(service.markdown).toBe('My content');
+      });
     });
 
     describe('generator options', () => {
