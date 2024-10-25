@@ -88,7 +88,7 @@ Raise a GitHub issue on this project, or contact us on [our Discord server](http
 
 # Sponsors
 
-Thank you to our project  sponsors.
+Thank you to our project sponsors.
 
 ## Gold sponsors
 
