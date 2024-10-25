@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.2.1
+
+### Patch Changes
+
+- 538f88e: chore(plugin): updated deps
+
 ## 2.2.0
 
 ### Minor Changes
