@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
 import path from 'path';
 import { EventType, MessageOperations } from './types';
+import * as semver from 'semver';
 
 const parser = new Parser();
 
@@ -67,12 +68,13 @@ export default async (config: any, options: Props) => {
 
   const {
     writeService,
+    writeVersionedService,
     writeEvent,
     writeCommand,
     writeQuery,
     getService,
     versionService,
-    rmService,
+    rmServiceById,
     getDomain,
     writeDomain,
     addServiceToDomain,
@@ -151,10 +153,10 @@ export default async (config: any, options: Props) => {
     // What messages does this service send and receive
     let sends = [];
     let receives = [];
-
-    let serviceSpecifications = {};
-    let serviceSpecificationsFiles = [];
-    let serviceMarkdown = generateMarkdownForService(document);
+    let specifications = {};
+    let specFiles = [];
+    let markdown = generateMarkdownForService(document);
+    let isOldVersion = false;
 
     // Manage domain
     if (options.domain) {
@@ -273,63 +275,73 @@ export default async (config: any, options: Props) => {
 
     // Check if service is already defined... if the versions do not match then create service.
     const latestServiceInCatalog = await getService(serviceId, 'latest');
+    const existingVersionInCatalog = await getService(serviceId, version);
 
     console.log(chalk.blue(`Processing service: ${serviceId} (v${version})`));
 
+    // Found a service, and versions do not match, we need to version the one already there
     if (latestServiceInCatalog) {
-      serviceMarkdown = latestServiceInCatalog.markdown;
-      // Found a service, and versions do not match, we need to version the one already there
-      if (latestServiceInCatalog.version !== version) {
-        await versionService(serviceId);
+      if (isHigherVersion(version, latestServiceInCatalog.version)) {
+        await versionService(service.id);
         console.log(chalk.cyan(` - Versioned previous service (v${latestServiceInCatalog.version})`));
-      }
-
-      // Match found, override it
-      if (latestServiceInCatalog.version === version) {
-        // we want to preserve the markdown any any spec files that are already there
-        serviceMarkdown = latestServiceInCatalog.markdown;
-        serviceSpecifications = latestServiceInCatalog.specifications ?? {};
-        sends = latestServiceInCatalog.sends ? [...latestServiceInCatalog.sends, ...sends] : sends;
-        receives = latestServiceInCatalog.receives ? [...latestServiceInCatalog.receives, ...receives] : receives;
-        serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
-        await rmService(serviceId);
+      } else {
+        isOldVersion = true;
+        console.log(
+          chalk.yellow(` - Previous Service (v${version}) detected over newer version ${latestServiceInCatalog.version}...`)
+        );
       }
     }
 
-    const fileName = path.basename(service.path);
+    if (existingVersionInCatalog) {
+      markdown = existingVersionInCatalog.markdown;
+      specFiles = await getSpecificationFilesForService(service.id, version);
+      sends = [...(existingVersionInCatalog.sends ?? []), ...sends];
+      receives = [...(existingVersionInCatalog.receives ?? []), ...receives];
 
-    await writeService({
+      // persist any specifications that are already in the catalog
+      specifications = {
+        ...specifications,
+        ...existingVersionInCatalog.specifications,
+      };
+
+      // Match found, override it
+      await rmServiceById(serviceId, version);
+    }
+
+    const fileName = path.basename(service.path);
+    const choosenWriteServiceActtion = isOldVersion ? writeVersionedService : writeService;
+    await choosenWriteServiceActtion({
       id: serviceId,
       name: serviceName,
       version: version,
       summary: getServiceSummary(document),
       badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
-      markdown: serviceMarkdown,
+      markdown: markdown,
       sends,
       receives,
       schemaPath: fileName || 'asyncapi.yml',
       specifications: {
-        ...serviceSpecifications,
+        ...specifications,
         asyncapiPath: fileName || 'asyncapi.yml',
       },
     });
 
     // What files need added to the service (speficiation files)
-    const specFiles = [
+    const existingSpecFiles = [
       // add any previous spec files to the list
-      ...serviceSpecificationsFiles,
+      ...specFiles,
       {
         content: saveParsedSpecFile ? getParsedSpecFile(service, document) : await getRawSpecFile(service),
         fileName: path.basename(service.path) || 'asyncapi.yml',
       },
     ];
 
-    for (const specFile of specFiles) {
+    for (const spec of existingSpecFiles) {
       await addFileToService(
         serviceId,
         {
-          fileName: specFile.fileName,
-          content: specFile.content,
+          fileName: spec.fileName,
+          content: spec.content,
         },
         version
       );
@@ -363,3 +375,7 @@ const getRawSpecFile = async (service: Service) => {
     return await readFile(service.path, 'utf8');
   }
 };
+
+function isHigherVersion(sourceVersion: string, targetVersion: string) {
+  return semver.gt(sourceVersion, targetVersion);
+}

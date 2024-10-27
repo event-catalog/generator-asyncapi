@@ -38,6 +38,9 @@ importers:
       minimist:
         specifier: ^1.2.8
         version: 1.2.8
+      semver:
+        specifier: ^7.6.3
+        version: 7.6.3
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
@@ -63,6 +66,9 @@ importers:
       '@types/node':
         specifier: ^20.16.1
         version: 20.16.9
+      '@types/semver':
+        specifier: ^7.5.8
+        version: 7.5.8
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -675,6 +681,9 @@ packages:
 
   '@types/node@20.16.9':
     resolution: {integrity: sha512-rkvIVJxsOfBejxK7I0FO5sa2WxFmJCzoDwcd88+fq/CUfynNywTo/1/T6hyFz22CyztsnLS9nVlHOnTI36RH5w==}
+
+  '@types/semver@7.5.8':
+    resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
 
   '@types/urijs@1.19.25':
     resolution: {integrity: sha512-XOfUup9r3Y06nFAZh3WvO0rBU4OtlfPB/vgxpjg+NRdGU6CN6djdc6OEiH+PcqHCY6eFLo9Ista73uarf4gnBg==}
@@ -2613,6 +2622,8 @@ snapshots:
   '@types/node@20.16.9':
     dependencies:
       undici-types: 6.19.8
+
+  '@types/semver@7.5.8': {}
 
   '@types/urijs@1.19.25': {}
 
