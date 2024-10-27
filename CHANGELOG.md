@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.3.1
+
+### Patch Changes
+
+- 1579b34: feat(plugin): added support for queries in messages
+
 ## 2.3.0
 
 ### Minor Changes
