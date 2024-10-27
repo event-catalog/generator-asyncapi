@@ -837,5 +837,85 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         );
       });
     });
+
+    describe('AsyncAPI files as external urls', () => {
+      it('when the `path` value is a URL then the plugin fetches the file and processes it', async () => {
+        const { getService } = utils(catalogDir);
+
+        await plugin(config, {
+          services: [
+            {
+              path: 'https://raw.githubusercontent.com/event-catalog/generator-asyncapi/refs/heads/main/src/test/asyncapi-files/simple.asyncapi.yml',
+              id: 'account-service',
+            },
+          ],
+        });
+
+        const service = await getService('account-service');
+
+        expect(service).toEqual(
+          expect.objectContaining({
+            id: 'account-service',
+            name: 'Account Service',
+            version: '1.0.0',
+            summary: 'This service is in charge of processing user signups',
+            badges: [
+              {
+                content: 'Events',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+              {
+                content: 'Authentication',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
+          })
+        );
+      });
+
+      it('when `saveParsedSpecFile` is false, the asyncapi file is requested from the given URL and stored against the service', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [
+            {
+              path: 'https://raw.githubusercontent.com/event-catalog/generator-asyncapi/refs/heads/main/src/test/asyncapi-files/simple.asyncapi.yml',
+              id: 'account-service',
+            },
+          ],
+          saveParsedSpecFile: false,
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'account-service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).not.toContain('x-parser-schema-id');
+      });
+
+      it('when `saveParsedSpecFile` is true, the asyncapi is requested from the given URL and is parsed then stored against the service', async () => {
+        const { getService } = utils(catalogDir);
+        await plugin(config, {
+          services: [
+            {
+              path: 'https://raw.githubusercontent.com/event-catalog/generator-asyncapi/refs/heads/main/src/test/asyncapi-files/simple.asyncapi.yml',
+              id: 'account-service',
+            },
+          ],
+          saveParsedSpecFile: true,
+        });
+
+        const service = await getService('account-service', '1.0.0');
+
+        expect(service.schemaPath).toEqual('simple.asyncapi.yml');
+
+        const schema = await fs.readFile(join(catalogDir, 'services', 'account-service', 'simple.asyncapi.yml'), 'utf8');
+        expect(schema).toBeDefined();
+        expect(schema).toContain('x-parser-schema-id');
+      });
+    });
   });
 });

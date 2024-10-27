@@ -1,5 +1,5 @@
 // import utils from '@eventcatalog/sdk';
-import { AsyncAPIDocumentInterface, Parser, fromFile } from '@asyncapi/parser';
+import { AsyncAPIDocumentInterface, Parser, fromFile, fromURL } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import { readFile } from 'node:fs/promises';
 import {
@@ -94,7 +94,9 @@ export default async (config: any, options: Props) => {
   for (const service of services) {
     console.log(chalk.gray(`Processing ${service.path}`));
 
-    const { document, diagnostics } = await fromFile(parser, service.path).parse();
+    const { document, diagnostics } = service.path.startsWith('http')
+      ? await fromURL(parser, service.path).parse()
+      : await fromFile(parser, service.path).parse();
 
     if (!document) {
       console.log(chalk.red('Failed to parse AsyncAPI file'));
@@ -311,4 +313,16 @@ const getParsedSpecFile = (service: Service, document: AsyncAPIDocumentInterface
     : yaml.dump(document.meta().asyncapi.parsed, { noRefs: true });
 };
 
-const getRawSpecFile = async (service: Service) => await readFile(service.path, 'utf8');
+const getRawSpecFile = async (service: Service) => {
+  if (service.path.startsWith('http')) {
+    try {
+      const response = await fetch(service.path);
+      return response.text();
+    } catch (error) {
+      console.log(chalk.red(`\nFailed to request AsyncAPI file from ${service.path}`));
+      return '';
+    }
+  } else {
+    return await readFile(service.path, 'utf8');
+  }
+};

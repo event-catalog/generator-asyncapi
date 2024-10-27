@@ -43,7 +43,9 @@ generators: [
       {
         services: [
           { path: path.join(__dirname, 'asyncapi-files', 'orders-service.asyncapi.yml'), id: 'Orders Service'},
-          { path: path.join(__dirname, 'asyncapi-files', 'accounts-service.asyncapi.yml'), id: 'Accounts Service', name: 'Awesome Accounts Service')}
+          { path: path.join(__dirname, 'asyncapi-files', 'accounts-service.asyncapi.yml'), id: 'Accounts Service', name: 'Awesome Accounts Service')},
+          // Fetch AsyncAPI file from an external URL
+          { path: "https://raw.githubusercontent.com/event-catalog/generator-asyncapi/refs/heads/main/src/test/asyncapi-files/simple.asyncapi.yml", id: 'Payment Service', name: 'Payment Service')}
         ],
         domain: { id: 'orders', name: 'Orders', version: '0.0.1' },
       },
@@ -52,7 +54,7 @@ generators: [
 ...
 ```
 
-In this example the generator will read the `orders-service.asyncapi.yml` file and populate services and messages inside your catalog. It will add the service to the domain `Orders`.
+In this example the generator will read the `orders-service.asyncapi.yml` file and also fetch AsyncAPI files from an external URL and populate services and messages inside your catalog. It will add the services to the domain `Orders`.
 
 You can see an example in the [eventcatalog-asyncapi-example](https://github.com/event-catalog/eventcatalog-asyncapi-example/blob/main/eventcatalog.config.js) repo
 
