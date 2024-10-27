@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.3.0
+
+### Minor Changes
+
+- 157a0e3: feat(plugin): asyncapi paths can now be urls
+
 ## 2.2.1
 
 ### Patch Changes
