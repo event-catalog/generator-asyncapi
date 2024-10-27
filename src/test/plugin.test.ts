@@ -301,8 +301,18 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
           const service = await getService('account-service', '1.0.0');
 
-          expect(service.receives).toHaveLength(1);
-          expect(service.receives).toEqual([{ id: 'signupuser', version: '1.0.0' }]);
+          expect(service.receives).toHaveLength(3);
+          expect(service.receives).toEqual([
+            { id: 'signupuser', version: '1.0.0' },
+            {
+              id: 'getuserbyemail',
+              version: '1.0.0',
+            },
+            {
+              id: 'checkemailavailability',
+              version: '1.0.0',
+            },
+          ]);
         });
 
         it('if the service is already defined and is receiving messages these are persisted', async () => {
@@ -320,10 +330,14 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
           const service = await getService('account-service', '1.0.0');
 
-          expect(service.receives).toHaveLength(2);
+          console.log(JSON.stringify(service.receives, null, 2));
+
+          expect(service.receives).toHaveLength(4);
           expect(service.receives).toEqual([
             { id: 'userloggedin', version: '1.0.0' },
             { id: 'signupuser', version: '1.0.0' },
+            { id: 'getuserbyemail', version: '1.0.0' },
+            { id: 'checkemailavailability', version: '1.0.0' },
           ]);
         });
       });
@@ -679,6 +693,33 @@ describe('AsyncAPI EventCatalog Plugin', () => {
                 backgroundColor: 'blue',
               },
             ],
+          })
+        );
+      });
+
+      it('messages marked as "queries" using the custom `ec-message-type` header in an AsyncAPI are documented in EventCatalog as queries ', async () => {
+        const { getQuery } = utils(catalogDir);
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const query = await getQuery('checkemailavailability');
+
+        console.log(JSON.stringify(query, null, 2));
+
+        expect(query).toEqual(
+          expect.objectContaining({
+            id: 'checkemailavailability',
+            version: '1.0.0',
+            name: 'CheckEmailAvailability',
+            summary: 'Check if an email is available for registration',
+            badges: [
+              {
+                content: 'Query',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
+            schemaPath: 'schema.json',
           })
         );
       });

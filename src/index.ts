@@ -20,6 +20,7 @@ import { z } from 'zod';
 // AsyncAPI Parsers
 import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
 import path from 'path';
+import { EventType, MessageOperations } from './types';
 
 const parser = new Parser();
 
@@ -58,6 +59,7 @@ const validateOptions = (options: Props) => {
     if (error instanceof z.ZodError) throw new Error(JSON.stringify(error.issues, null, 2));
   }
 };
+
 export default async (config: any, options: Props) => {
   if (!process.env.PROJECT_DIR) {
     throw new Error('Please provide catalog url (env variable PROJECT_DIR)');
@@ -67,6 +69,7 @@ export default async (config: any, options: Props) => {
     writeService,
     writeEvent,
     writeCommand,
+    writeQuery,
     getService,
     versionService,
     rmService,
@@ -75,16 +78,45 @@ export default async (config: any, options: Props) => {
     addServiceToDomain,
     getCommand,
     getEvent,
+    getQuery,
     rmEventById,
     rmCommandById,
+    rmQueryById,
     versionCommand,
     versionEvent,
+    versionQuery,
     addSchemaToCommand,
     addSchemaToEvent,
+    addSchemaToQuery,
     addFileToService,
     versionDomain,
     getSpecificationFilesForService,
   } = utils(process.env.PROJECT_DIR);
+
+  // Define the message operations mapping with proper types
+  const MESSAGE_OPERATIONS: Record<EventType, MessageOperations> = {
+    event: {
+      write: writeEvent,
+      version: versionEvent,
+      get: getEvent,
+      remove: rmEventById,
+      addSchema: addSchemaToEvent,
+    },
+    command: {
+      write: writeCommand,
+      version: versionCommand,
+      get: getCommand,
+      remove: rmCommandById,
+      addSchema: addSchemaToCommand,
+    },
+    query: {
+      write: writeQuery,
+      version: versionQuery,
+      get: getQuery,
+      remove: rmQueryById,
+      addSchema: addSchemaToQuery,
+    },
+  };
 
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
   validateOptions(options);
@@ -162,16 +194,23 @@ export default async (config: any, options: Props) => {
     // Find events/commands
     for (const operation of operations) {
       for (const message of operation.messages()) {
-        const eventType = message.extensions().get('x-eventcatalog-message-type')?.value() || 'event';
+        const eventType = (message.extensions().get('x-eventcatalog-message-type')?.value() as EventType) || 'event';
 
         const messageId = message.id().toLowerCase();
 
+        if (eventType !== 'event' && eventType !== 'command' && eventType !== 'query') {
+          throw new Error('Invalid message type');
+        }
+
+        const {
+          write: writeMessage,
+          version: versionMessage,
+          get: getMessage,
+          remove: rmMessageById,
+          addSchema: addSchemaToMessage,
+        } = MESSAGE_OPERATIONS[eventType];
+
         let messageMarkdown = generateMarkdownForMessage(document, message);
-        const writeMessage = eventType === 'event' ? writeEvent : writeCommand;
-        const versionMessage = eventType === 'event' ? versionEvent : versionCommand;
-        const getMessage = eventType === 'event' ? getEvent : getCommand;
-        const rmMessageById = eventType === 'event' ? rmEventById : rmCommandById;
-        const addSchemaToMessage = eventType === 'event' ? addSchemaToEvent : addSchemaToCommand;
         const badges = message.tags().all() || [];
 
         // Check if the message already exists in the catalog
@@ -256,8 +295,6 @@ export default async (config: any, options: Props) => {
         await rmService(serviceId);
       }
     }
-
-    // ...
 
     const fileName = path.basename(service.path);
 
