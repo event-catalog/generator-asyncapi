@@ -90,6 +90,7 @@ export default async (config: any, options: Props) => {
     addSchemaToQuery,
     addFileToService,
     versionDomain,
+    rmDomainById,
     getSpecificationFilesForService,
   } = utils(process.env.PROJECT_DIR);
 
@@ -121,7 +122,6 @@ export default async (config: any, options: Props) => {
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
   validateOptions(options);
   const { services, saveParsedSpecFile = false } = options;
-  // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
   for (const service of services) {
     console.log(chalk.gray(`Processing ${service.path}`));
@@ -142,25 +142,29 @@ export default async (config: any, options: Props) => {
 
     const operations = document.allOperations();
     const documentTags = document.info().tags().all() || [];
-
-    const serviceId = service.id;
-
     const serviceName = service.name || document.info().title();
     const version = document.info().version();
+    const serviceId = service.id;
 
     // What messages does this service send and receive
     let sends = [];
     let receives = [];
-
-    let serviceSpecifications = {};
-    let serviceSpecificationsFiles = [];
     let serviceMarkdown = generateMarkdownForService(document);
+
+    // service markdown specifications
+    let serviceSpecifications = {};
+    // service specification files
+    let serviceSpecificationsFiles = [];
+
+    // Domain Variables
+    let domainMarkDown;
+    let domainServices: { id: string; version: string }[] = [];
 
     // Manage domain
     if (options.domain) {
       // Try and get the domain
       const { id: domainId, name: domainName, version: domainVersion } = options.domain;
-      const domain = await getDomain(options.domain.id, domainVersion || 'latest');
+      const domain = await getDomain(options.domain.id, domainVersion);
       const currentDomain = await getDomain(options.domain.id, 'latest');
 
       console.log(chalk.blue(`\nProcessing domain: ${domainName} (v${domainVersion})`));
@@ -172,20 +176,25 @@ export default async (config: any, options: Props) => {
       }
 
       // Do we need to create a new domain?
-      if (!domain || (domain && domain.version !== domainVersion)) {
-        await writeDomain({
-          id: domainId,
-          name: domainName,
-          version: domainVersion,
-          markdown: generateMarkdownForDomain(document),
-          // services: [{ id: serviceId, version: version }],
-        });
-        console.log(chalk.cyan(` - Domain (v${domainVersion}) created`));
+      if (domain) {
+        console.log(chalk.yellow(` - Domain (v${domainVersion}) already exists, fetching existing details...`));
+        domainMarkDown = domain.markdown;
+        domainServices = domain.services || [];
+
+        await rmDomainById(domainId, domainVersion);
       }
 
-      if (currentDomain && currentDomain.version === domainVersion) {
-        console.log(chalk.yellow(` - Domain (v${domainVersion}) already exists, skipped creation...`));
-      }
+      domainServices = domainServices.filter((service) => service.id !== serviceId);
+      console.log(chalk.red(` - Domain (${JSON.stringify(domainServices)}) created`));
+
+      await writeDomain({
+        id: domainId,
+        name: domainName,
+        version: domainVersion,
+        markdown: generateMarkdownForDomain(document),
+        services: [...domainServices, { id: serviceId, version: version }],
+      });
+      console.log(chalk.cyan(` - Domain (v${domainVersion}) created`));
 
       // Add the service to the domain
       await addServiceToDomain(domainId, { id: serviceId, version: version }, domainVersion);

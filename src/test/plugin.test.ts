@@ -46,6 +46,31 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(newDomain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
       });
 
+      it('if a domain is defined in the AsyncAPI file but the versions do not match, the existing domain is version and a new one is created', async () => {
+        const { writeDomain, getDomain } = utils(catalogDir);
+
+        await writeDomain({
+          id: 'orders',
+          name: 'Orders Domain',
+          version: '0.0.1',
+          markdown: '',
+          services: [{ id: 'account-service', version: '0.0.1' }],
+        });
+
+        await plugin(config, {
+          services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }],
+          domain: { id: 'orders', name: 'Orders Domain', version: '1.0.0' },
+        });
+
+        const versionedDomain = await getDomain('orders', '0.0.1');
+        const newDomain = await getDomain('orders', '1.0.0');
+
+        expect(versionedDomain.version).toEqual('0.0.1');
+        expect(newDomain.version).toEqual('1.0.0');
+        expect(versionedDomain.services).toEqual([{ id: 'account-service', version: '0.0.1' }]);
+        expect(newDomain.services).toEqual([{ id: 'account-service', version: '1.0.0' }]);
+      });
+
       it('if a domain is defined in the AsyncAPI plugin configuration and that domain exists the AsyncAPI Service is added to that domain', async () => {
         const { writeDomain, getDomain } = utils(catalogDir);
 
