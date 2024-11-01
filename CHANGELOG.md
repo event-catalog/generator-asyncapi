@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.4.1
+
+### Patch Changes
+
+- 3995b89: chore(plugin): upgrade eventcatalog sdk version
+
 ## 2.4.0
 
 ### Minor Changes
