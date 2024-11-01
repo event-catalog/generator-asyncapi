@@ -15,8 +15,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       '@eventcatalog/sdk':
-        specifier: ^1.1.3
-        version: 1.1.3
+        specifier: ^1.1.4
+        version: 1.1.4
       chalk:
         specifier: ^4
         version: 4.1.2
@@ -428,8 +428,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@eventcatalog/sdk@1.1.3':
-    resolution: {integrity: sha512-00HZxq52hfYKpF5g3DuFeUCoQqfDCfZZ38ARHoRL1PhDohq6e5MqqP5nkS6oLqj113jfOGarWcIN7ynq3EQgvA==}
+  '@eventcatalog/sdk@1.1.4':
+    resolution: {integrity: sha512-pJmL2qxfW+NLWHODgdbxIv8+gLX8i738peTJ+6bHPWG+n4mwx6jvU1BjnBRjgvp3EExR0FzavMZuBoB/kxS34w==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -2310,7 +2310,7 @@ snapshots:
   '@esbuild/win32-x64@0.23.1':
     optional: true
 
-  '@eventcatalog/sdk@1.1.3':
+  '@eventcatalog/sdk@1.1.4':
     dependencies:
       '@changesets/cli': 2.27.9
       fs-extra: 11.2.0
