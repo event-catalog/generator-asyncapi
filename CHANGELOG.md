@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.4.2
+
+### Patch Changes
+
+- f2e3908: feat(plugin): added support for versioning messages
+
 ## 2.4.1
 
 ### Patch Changes
