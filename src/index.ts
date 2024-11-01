@@ -195,6 +195,7 @@ export default async (config: any, options: Props) => {
     for (const operation of operations) {
       for (const message of operation.messages()) {
         const eventType = (message.extensions().get('x-eventcatalog-message-type')?.value() as EventType) || 'event';
+        const messageVersion = message.extensions().get('x-eventcatalog-message-version')?.value() || version;
 
         // does this service own or just consume the message?
         const serviceOwnsMessageContract = isServiceMessageOwner(message);
@@ -218,7 +219,7 @@ export default async (config: any, options: Props) => {
         let messageMarkdown = generateMarkdownForMessage(document, message);
         const badges = message.tags().all() || [];
 
-        console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${version})`));
+        console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${messageVersion})`));
 
         if (serviceOwnsMessageContract) {
           // Check if the message already exists in the catalog
@@ -227,8 +228,8 @@ export default async (config: any, options: Props) => {
           if (catalogedMessage) {
             messageMarkdown = catalogedMessage.markdown;
             // if the version matches, we can override the message but keep markdown as it  was
-            if (catalogedMessage.version === version) {
-              await rmMessageById(messageId, version);
+            if (catalogedMessage.version === messageVersion) {
+              await rmMessageById(messageId, messageVersion);
             } else {
               // if the version does not match, we need to version the message
               await versionMessage(messageId);
@@ -240,7 +241,7 @@ export default async (config: any, options: Props) => {
           await writeMessage(
             {
               id: messageId,
-              version: version,
+              version: messageVersion,
               name: getMessageName(message),
               summary: getMessageSummary(message),
               markdown: messageMarkdown,
@@ -252,7 +253,7 @@ export default async (config: any, options: Props) => {
             }
           );
 
-          console.log(chalk.cyan(` - Message (v${version}) created`));
+          console.log(chalk.cyan(` - Message (v${messageVersion}) created`));
           // Check if the message has a payload, if it does then document in EventCatalog
           if (messageHasSchema(message)) {
             addSchemaToMessage(
@@ -261,17 +262,17 @@ export default async (config: any, options: Props) => {
                 fileName: getSchemaFileName(message),
                 schema: JSON.stringify(message.payload()?.json(), null, 4),
               },
-              version
+              messageVersion
             );
-            console.log(chalk.cyan(` - Schema added to message (v${version})`));
+            console.log(chalk.cyan(` - Schema added to message (v${messageVersion})`));
           }
         } else {
           // Message is not owned by this service, therefore we don't need to document it
-          console.log(chalk.yellow(` - Skipping external message: ${getMessageName(message)}(v${version})`));
+          console.log(chalk.yellow(` - Skipping external message: ${getMessageName(message)}(v${messageVersion})`));
         }
         // Add the message to the correct array
-        if (isSent) sends.push({ id: messageId, version: version });
-        if (isReceived) receives.push({ id: messageId, version: version });
+        if (isSent) sends.push({ id: messageId, version: messageVersion });
+        if (isReceived) receives.push({ id: messageId, version: messageVersion });
       }
     }
 

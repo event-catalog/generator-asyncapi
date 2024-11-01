@@ -303,7 +303,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
           expect(service.receives).toHaveLength(4);
           expect(service.receives).toEqual([
-            { id: 'signupuser', version: '1.0.0' },
+            { id: 'signupuser', version: '2.0.0' },
             {
               id: 'getuserbyemail',
               version: '1.0.0',
@@ -336,7 +336,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           expect(service.receives).toHaveLength(5);
           expect(service.receives).toEqual([
             { id: 'userloggedin', version: '1.0.0' },
-            { id: 'signupuser', version: '1.0.0' },
+            { id: 'signupuser', version: '2.0.0' },
             { id: 'getuserbyemail', version: '1.0.0' },
             { id: 'checkemailavailability', version: '1.0.0' },
             { id: 'usersubscribed', version: '1.0.0' },
@@ -675,7 +675,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         );
       });
 
-      it('messages marked as "commands" using the custom `ec-message-type` header in an AsyncAPI are documented in EventCatalog as commands ', async () => {
+      it('messages marked as "commands" using the custom `x-eventcatalog-message-type` header in an AsyncAPI are documented in EventCatalog as commands ', async () => {
         const { getCommand } = utils(catalogDir);
 
         await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
@@ -686,7 +686,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           expect.objectContaining({
             id: 'signupuser',
             name: 'SignUpUser',
-            version: '1.0.0',
+            version: '2.0.0',
             summary: 'Sign up a user',
             badges: [
               {
@@ -790,12 +790,39 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(newEvent).toBeUndefined();
 
         expect(service.receives).toEqual([
-          { id: 'signupuser', version: '1.0.0' },
+          { id: 'signupuser', version: '2.0.0' },
           { id: 'getuserbyemail', version: '1.0.0' },
           { id: 'checkemailavailability', version: '1.0.0' },
           // The event we expect
           { id: 'usersubscribed', version: '1.0.0' },
         ]);
+      });
+
+      it('when the `x-eventcatalog-message-version` is defined on a message that version is used and not the the AsyncAPI version', async () => {
+        const { getEvent } = utils(catalogDir);
+        const { getService } = utils(catalogDir);
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const service = await getService('account-service', '1.0.0');
+        const event = await getEvent('signupuser', 'latest');
+
+        // Event was not added to the EventCatalog
+        expect(event).toBeDefined();
+        expect(event.version).toEqual('2.0.0');
+        expect(service.version).toEqual('1.0.0');
+      });
+
+      it('when the `x-eventcatalog-message-version` is defined on a message the schema is stored against that version', async () => {
+        const { getEvent } = utils(catalogDir);
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const event = await getEvent('signupuser', 'latest');
+
+        // custom version is used
+        expect(event.version).toEqual('2.0.0');
+        expect(event.schemaPath).toEqual('schema.json');
       });
 
       describe('schemas', () => {
