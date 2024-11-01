@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.4.0
+
+### Minor Changes
+
+- ec93417: feat(plugin): added new extension x-eventcatalog-role
+
 ## 2.3.1
 
 ### Patch Changes
