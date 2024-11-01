@@ -197,7 +197,7 @@ export default async (config: any, options: Props) => {
         const eventType = (message.extensions().get('x-eventcatalog-message-type')?.value() as EventType) || 'event';
 
         // does this service own or just consume the message?
-        const serviceOwnsMessageContract = isServiceMessageOwner(message, 'provider');
+        const serviceOwnsMessageContract = isServiceMessageOwner(message);
         const isReceived = operation.action() === 'receive' || operation.action() === 'receive';
         const isSent = operation.action() === 'send' || operation.action() === 'publish';
 
