@@ -368,18 +368,15 @@ const getRawSpecFile = async (service: Service) => {
   }
 };
 /**
- * Verify the role of the message in spec
- *
- * client: consuming a contract
- * provider: producing a contract
+ * Is the AsyncAPI specification (service) the owner of the message?
+ * This is determined by the 'x-eventcatalog-role' extension in the message
  *
  * @param message
- * @param role Possible values are 'client' and 'provider'
  * @returns boolean
  *
- * default is provider
+ * default is provider (AsyncAPI file / service owns the message)
  */
-const isServiceMessageOwner = (message: MessageInterface, role: 'client' | 'provider'): boolean => {
+const isServiceMessageOwner = (message: MessageInterface): boolean => {
   const value = message.extensions().get('x-eventcatalog-role')?.value() || 'provider';
   return value === 'provider';
 };
