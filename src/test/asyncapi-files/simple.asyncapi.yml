@@ -114,6 +114,7 @@ components:
     SignUpUser:
       description: 'Sign up a user'
       x-eventcatalog-message-type: command
+      x-eventcatalog-message-version: 2.0.0
       tags:
         - name: 'New'
           description: 'New event'
