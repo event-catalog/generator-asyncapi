@@ -777,7 +777,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(newEvent.markdown).toEqual('please dont override me!');
       });
 
-      it('any message using the custom `x-ec-role` does not create new or modify existing message. but will be included in service documentation', async () => {
+      it('when the `x-eventcatalog-role` is defined and set to `client` the generator does not create or modify the message documentation, but still included in the service (sends/receives)', async () => {
         const { getEvent } = utils(catalogDir);
         const { getService } = utils(catalogDir);
 
@@ -785,8 +785,17 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const service = await getService('account-service', '1.0.0');
         const newEvent = await getEvent('usersubscribed', 'latest');
+
+        // Event was not added to the EventCatalog
         expect(newEvent).toBeUndefined();
-        expect(service.receives).toHaveLength(4);
+
+        expect(service.receives).toEqual([
+          { id: 'signupuser', version: '1.0.0' },
+          { id: 'getuserbyemail', version: '1.0.0' },
+          { id: 'checkemailavailability', version: '1.0.0' },
+          // The event we expect
+          { id: 'usersubscribed', version: '1.0.0' },
+        ]);
       });
 
       describe('schemas', () => {

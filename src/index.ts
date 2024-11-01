@@ -195,8 +195,10 @@ export default async (config: any, options: Props) => {
     for (const operation of operations) {
       for (const message of operation.messages()) {
         const eventType = (message.extensions().get('x-eventcatalog-message-type')?.value() as EventType) || 'event';
-        const isMessageProvider = hasRoleOf(message, 'provider');
-        const isRecived = operation.action() === 'receive' || operation.action() === 'subscribe';
+
+        // does this service own or just consume the message?
+        const serviceOwnsMessageContract = isServiceMessageOwner(message, 'provider');
+        const isReceived = operation.action() === 'receive' || operation.action() === 'receive';
         const isSent = operation.action() === 'send' || operation.action() === 'publish';
 
         const messageId = message.id().toLowerCase();
@@ -218,7 +220,7 @@ export default async (config: any, options: Props) => {
 
         console.log(chalk.blue(`Processing message: ${getMessageName(message)} (v${version})`));
 
-        if (isMessageProvider) {
+        if (serviceOwnsMessageContract) {
           // Check if the message already exists in the catalog
           const catalogedMessage = await getMessage(message.id().toLowerCase(), 'latest');
 
@@ -264,11 +266,12 @@ export default async (config: any, options: Props) => {
             console.log(chalk.cyan(` - Schema added to message (v${version})`));
           }
         } else {
+          // Message is not owned by this service, therefore we don't need to document it
           console.log(chalk.yellow(` - Skipping external message: ${getMessageName(message)}(v${version})`));
         }
         // Add the message to the correct array
         if (isSent) sends.push({ id: messageId, version: version });
-        if (isRecived) receives.push({ id: messageId, version: version });
+        if (isReceived) receives.push({ id: messageId, version: version });
       }
     }
 
@@ -374,9 +377,9 @@ const getRawSpecFile = async (service: Service) => {
  * @param role Possible values are 'client' and 'provider'
  * @returns boolean
  *
- * defult is provider
+ * default is provider
  */
-const hasRoleOf = (message: MessageInterface, role: 'client' | 'provider'): boolean => {
+const isServiceMessageOwner = (message: MessageInterface, role: 'client' | 'provider'): boolean => {
   const value = message.extensions().get('x-eventcatalog-role')?.value() || 'provider';
   return value === 'provider';
 };
