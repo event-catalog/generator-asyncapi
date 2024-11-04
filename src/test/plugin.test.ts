@@ -855,7 +855,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(event.schemaPath).toEqual('schema.json');
       });
 
-      it.only('if `parseSchemas` is false, the schemas for the AsyncAPI document are not parsed, and the original AsyncAPI file is saved against the service', async () => {
+      it('if `parseSchemas` is false, the schemas for the AsyncAPI document are not parsed, and the original AsyncAPI file is saved against the service', async () => {
         const { getEvent, getService } = utils(catalogDir);
 
         await plugin(config, {
