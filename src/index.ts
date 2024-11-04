@@ -264,7 +264,7 @@ export default async (config: any, options: Props) => {
             // Get the schema from the original payload if it exists
             const schema = message.payload()?.extensions()?.get('x-parser-original-payload')?.json() || message.payload()?.json();
 
-            addSchemaToMessage(
+            await addSchemaToMessage(
               messageId,
               {
                 fileName: getSchemaFileName(message),
