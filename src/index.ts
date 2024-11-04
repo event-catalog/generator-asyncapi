@@ -256,11 +256,14 @@ export default async (config: any, options: Props) => {
           console.log(chalk.cyan(` - Message (v${messageVersion}) created`));
           // Check if the message has a payload, if it does then document in EventCatalog
           if (messageHasSchema(message)) {
+            // Get the schema from the original payload if it exists
+            const schema = message.payload()?.extensions()?.get('x-parser-original-payload')?.json() || message.payload()?.json();
+
             addSchemaToMessage(
               messageId,
               {
                 fileName: getSchemaFileName(message),
-                schema: JSON.stringify(message.payload()?.json(), null, 4),
+                schema: JSON.stringify(schema, null, 4),
               },
               messageVersion
             );
