@@ -45,6 +45,7 @@ const optionsSchema = z.object({
     })
     .optional(),
   debug: z.boolean().optional(),
+  parseSchemas: z.boolean().optional(),
   saveParsedSpecFile: z.boolean({ invalid_type_error: 'The saveParsedSpecFile is not a boolean in options' }).optional(),
 });
 
@@ -120,15 +121,20 @@ export default async (config: any, options: Props) => {
 
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
   validateOptions(options);
-  const { services, saveParsedSpecFile = false } = options;
+  const { services, saveParsedSpecFile = false, parseSchemas = true } = options;
+  console.log('parseSchemas', parseSchemas)
   // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
   for (const service of services) {
     console.log(chalk.gray(`Processing ${service.path}`));
 
     const { document, diagnostics } = service.path.startsWith('http')
-      ? await fromURL(parser, service.path).parse()
-      : await fromFile(parser, service.path).parse();
+      ? await fromURL(parser, service.path).parse({
+          parseSchemas,
+        })
+      : await fromFile(parser, service.path).parse({
+          parseSchemas,
+        });
 
     if (!document) {
       console.log(chalk.red('Failed to parse AsyncAPI file'));

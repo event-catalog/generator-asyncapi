@@ -860,6 +860,88 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(event.schemaPath).toEqual('schema.json');
       });
 
+      it('if `parseSchemas` is false, the schemas for the AsyncAPI document are not parsed, and the original AsyncAPI file is saved against the service', async () => {
+        const { getEvent, getService } = utils(catalogDir);
+
+        await plugin(config, {
+          services: [
+            { path: join(asyncAPIExamplesDir, 'asyncapi-with-avro-expect-not-to-parse-schemas.yml'), id: 'test-service' },
+          ],
+          saveParsedSpecFile: true,
+          parseSchemas: false,
+        });
+
+        const service = await getService('test-service', '1.0.0');
+        const event = await getEvent('lightmeasuredmessageavro', '1.0.0');
+
+        expect(service).toBeDefined();
+        expect(event).toBeDefined();
+        expect(event.schemaPath).toEqual('schema.avsc');
+
+        const schema = await fs.readFile(join(catalogDir, 'events', 'lightmeasuredmessageavro', 'schema.avsc'), 'utf-8');
+        const parsedAsyncAPIFile = await fs.readFile(
+          join(catalogDir, 'services', 'test-service', 'asyncapi-with-avro-expect-not-to-parse-schemas.yml'),
+          'utf-8'
+        );
+        const parsedSchema = JSON.parse(schema);
+        expect(parsedSchema).toEqual({
+          schemaFormat: 'application/vnd.apache.avro;version=1.9.0',
+          schema: {
+            type: 'record',
+            name: 'UserCreated',
+            namespace: 'com.example.events',
+            fields: [
+              {
+                name: 'id',
+                type: 'string',
+                doc: 'User identifier',
+              },
+              {
+                name: 'email',
+                type: 'string',
+                doc: "User's email address",
+              },
+              {
+                name: 'createdAt',
+                type: 'long',
+                doc: 'Timestamp of user creation',
+                logicalType: 'timestamp-millis',
+              },
+              {
+                name: 'isActive',
+                type: 'boolean',
+                default: true,
+              },
+            ],
+            'x-parser-schema-id': '<anonymous-schema-1>',
+          },
+        });
+
+        // Schema is now parsed, added as it was defined.
+        expect(parsedAsyncAPIFile).toContain(`lightMeasuredMessageAvro:
+          name: LightMeasuredAvro
+          payload:
+            schemaFormat: application/vnd.apache.avro;version=1.9.0
+            schema:
+              type: record
+              name: UserCreated
+              namespace: com.example.events
+              fields:
+                - name: id
+                  type: string
+                  doc: User identifier
+                - name: email
+                  type: string
+                  doc: User's email address
+                - name: createdAt
+                  type: long
+                  doc: Timestamp of user creation
+                  logicalType: timestamp-millis
+                - name: isActive
+                  type: boolean
+                  default: true`);
+      });
+
       it('if the AsyncAPI has any $ref these are not saved to the service. The servive AsyncAPI is has no $ref', async () => {
         await plugin(config, {
           services: [{ path: join(asyncAPIExamplesDir, 'ref-example.asyncapi.yml'), id: 'Test Service' }],

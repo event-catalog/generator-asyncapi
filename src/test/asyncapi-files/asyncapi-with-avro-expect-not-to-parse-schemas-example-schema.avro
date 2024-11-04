@@ -1,0 +1,29 @@
+
+{
+  "type": "record",
+  "name": "UserCreated",
+  "namespace": "com.example.events",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string",
+      "doc": "User identifier"
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "doc": "User's email address"
+    },
+    {
+      "name": "createdAt",
+      "type": "long",
+      "doc": "Timestamp of user creation",
+      "logicalType": "timestamp-millis"
+    },
+    {
+      "name": "isActive",
+      "type": "boolean",
+      "default": true
+    }
+  ]
+}
