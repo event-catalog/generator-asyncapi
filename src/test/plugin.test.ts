@@ -331,8 +331,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
           const service = await getService('account-service', '1.0.0');
 
-          console.log(JSON.stringify(service.receives, null, 2));
-
           expect(service.receives).toHaveLength(5);
           expect(service.receives).toEqual([
             { id: 'userloggedin', version: '1.0.0' },
@@ -706,8 +704,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
         const query = await getQuery('checkemailavailability');
 
-        console.log(JSON.stringify(query, null, 2));
-
         expect(query).toEqual(
           expect.objectContaining({
             id: 'checkemailavailability',
@@ -831,7 +827,6 @@ describe('AsyncAPI EventCatalog Plugin', () => {
 
           const schema = await fs.readFile(join(catalogDir, 'events', 'UserSignedUp', 'schema.json'));
 
-          console.log('SCHEMA', schema.toString());
           expect(schema).toBeDefined();
         });
 
