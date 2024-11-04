@@ -830,6 +830,8 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
 
           const schema = await fs.readFile(join(catalogDir, 'events', 'UserSignedUp', 'schema.json'));
+
+          console.log('SCHEMA', schema.toString());
           expect(schema).toBeDefined();
         });
 
@@ -877,7 +879,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
     });
 
     describe('asyncapi files with avro schemas', () => {
-      it('parses the AsyncAPI file with avro schemas', async () => {
+      it('parses the AsyncAPI file with avro schemas, and stores the avro schema against the event', async () => {
         const { getEvent, getService } = utils(catalogDir);
 
         await plugin(config, {
@@ -893,8 +895,24 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(event.schemaPath).toEqual('schema.avsc');
 
         // Check file schema.avsc
-        const schema = await fs.readFile(join(catalogDir, 'events', 'userSignedUp', 'schema.avsc'));
-        expect(schema).toBeDefined();
+        const schema = await fs.readFile(join(catalogDir, 'events', 'userSignedUp', 'schema.avsc'), 'utf-8');
+        const schemaParsed = JSON.parse(schema);
+        expect(schemaParsed).toEqual({
+          type: 'record',
+          name: 'UserSignedUp',
+          namespace: 'com.company',
+          doc: 'User sign-up information',
+          fields: [
+            {
+              name: 'userId',
+              type: 'int',
+            },
+            {
+              name: 'userEmail',
+              type: 'string',
+            },
+          ],
+        });
       });
     });
 
