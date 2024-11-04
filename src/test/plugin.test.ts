@@ -873,6 +873,9 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         expect(event).toBeDefined();
         expect(event.schemaPath).toEqual('schema.avsc');
 
+        const files = await fs.readdir(join(catalogDir, 'events', 'lightmeasuredmessageavro'));
+        console.log(files);
+
         const schema = await fs.readFile(join(catalogDir, 'events', 'lightmeasuredmessageavro', 'schema.avsc'), 'utf-8');
         const parsedAsyncAPIFile = await fs.readFile(
           join(catalogDir, 'services', 'test-service', 'asyncapi-with-avro-expect-not-to-parse-schemas.yml'),
