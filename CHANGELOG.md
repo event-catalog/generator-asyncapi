@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.5.0
+
+### Minor Changes
+
+- 8effb57: fix(plugin): the original schema is now stored against the message
+
 ## 2.4.2
 
 ### Patch Changes
