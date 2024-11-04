@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.5.1
+
+### Patch Changes
+
+- df75c7b: feat(plugin): added optional field to not parse schemas when parsing …
+
 ## 2.5.0
 
 ### Minor Changes
