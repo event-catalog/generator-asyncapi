@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.5.2
+
+### Patch Changes
+
+- d6c0491: chore(plugin):added dashboard link to generator
+
 ## 2.5.1
 
 ### Patch Changes
