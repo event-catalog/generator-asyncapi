@@ -204,7 +204,7 @@ export default async (config: any, options: Props) => {
 
         // does this service own or just consume the message?
         const serviceOwnsMessageContract = isServiceMessageOwner(message);
-        const isReceived = operation.action() === 'receive' || operation.action() === 'receive';
+        const isReceived = operation.action() === 'receive' || operation.action() === 'subscribe';
         const isSent = operation.action() === 'send' || operation.action() === 'publish';
 
         const messageId = message.id().toLowerCase();
