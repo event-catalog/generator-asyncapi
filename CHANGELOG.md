@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.7.0
+
+### Minor Changes
+
+- 9386b80: feat(plugin): added feature to map channels to EventCatalog
+
 ## 2.6.0
 
 ### Minor Changes
