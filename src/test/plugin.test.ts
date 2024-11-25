@@ -868,6 +868,143 @@ describe('AsyncAPI EventCatalog Plugin', () => {
       });
     });
 
+    describe('channels', () => {
+      describe('when `channels` is set to true in the generator configuration file', () => {
+        it('all channels in the AsyncAPI file are documented in EventCatalog', async () => {
+          const { getChannel, getChannels } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const channels = await getChannels();
+          expect(channels).toHaveLength(4);
+
+          const lightingMeasured = await getChannel('lightingMeasured');
+
+          console.log(lightingMeasured.markdown);
+
+          expect(lightingMeasured).toEqual({
+            id: 'lightingMeasured',
+            name: 'Lighting Measured Channel',
+            address: 'smartylighting.streetlights.1.0.event.{streetlightId}.lighting.measured',
+            summary: 'Inform about environmental lighting conditions of a particular streetlight.',
+            version: '1.0.0',
+            markdown: expect.toMatchMarkdown(`## Overview
+              The topic on which measured values may be produced and consumed.
+              <ChannelInformation />`),
+            protocols: ['kafka'],
+            parameters: {
+              streetlightId: {
+                description: 'The ID of the streetlight.',
+              },
+            },
+          });
+        });
+
+        it('when no address, parameters, title or description is set on a channel the channel is still written to the catalog', async () => {
+          const { getChannel, getChannels } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const lightsDim = await getChannel('lightsDim');
+
+          expect(lightsDim).toEqual({
+            id: 'lightsDim',
+            name: 'lightsDim',
+            version: '2.0.0',
+            markdown: '<ChannelInformation />',
+          });
+        });
+
+        it('when a channel (root level) defines messages, these messages are linked to that channel', async () => {
+          const { getEvent, getEvents } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const event = await getEvent('lightmeasured', '1.0.0');
+
+          expect(event).toBeDefined();
+
+          expect(event.channels).toEqual([
+            {
+              id: 'lightingMeasured',
+              version: '1.0.0',
+            },
+          ]);
+        });
+
+        it('when the channel has a `x-eventcatalog-channel-version` value, that version is used over the global AsyncAPI version', async () => {
+          const { getChannel, getEvent } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const channel = await getChannel('lightsDim');
+          const event = await getEvent('dimlight');
+
+          expect(channel.version).toEqual('2.0.0');
+          expect(event.channels).toEqual([
+            {
+              id: 'lightsDim',
+              version: '2.0.0',
+            },
+          ]);
+        });
+
+        it('if the channel already exists and the versions match the metadata is updated, but the markdown is not overwritten', async () => {
+          const { writeChannel, getChannel } = utils(catalogDir);
+
+          await writeChannel({
+            id: 'lightingMeasured',
+            version: '1.0.0',
+            name: 'Lighting Measured Channel',
+            markdown: 'please dont override me!',
+          });
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const channel = await getChannel('lightingMeasured');
+
+          expect(channel.markdown).toEqual('please dont override me!');
+        });
+
+        it('if the channel already exists and the versions do not match the existing channel is versioned', async () => {
+          const { writeChannel, getChannel } = utils(catalogDir);
+
+          await writeChannel({
+            id: 'lightingMeasured',
+            version: '0.0.5',
+            name: 'Lighting Measured Channel',
+            markdown: '',
+          });
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const versionedChannel = await getChannel('lightingMeasured', '0.0.5');
+          const newChannel = await getChannel('lightingMeasured', '1.0.0');
+
+          expect(versionedChannel).toBeDefined();
+          expect(newChannel).toBeDefined();
+        });
+      });
+    });
+
     describe('$ref', () => {
       it('AsyncAPI files with $ref are resolved and added to the catalog', async () => {
         const { getEvent, getService } = utils(catalogDir);

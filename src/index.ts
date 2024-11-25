@@ -1,9 +1,18 @@
-// import utils from '@eventcatalog/sdk';
 import { AsyncAPIDocumentInterface, MessageInterface, Parser, fromFile, fromURL } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import { readFile } from 'node:fs/promises';
+import argv from 'minimist';
+import yaml from 'js-yaml';
+import { z } from 'zod';
+import chalk from 'chalk';
+import path from 'path';
+
+// AsyncAPI Parsers
+import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
+
 import {
   defaultMarkdown as generateMarkdownForMessage,
+  getChannelsForMessage,
   getMessageName,
   getSummary as getMessageSummary,
   getSchemaFileName,
@@ -11,15 +20,9 @@ import {
 } from './utils/messages';
 import { defaultMarkdown as generateMarkdownForService, getSummary as getServiceSummary } from './utils/services';
 import { defaultMarkdown as generateMarkdownForDomain } from './utils/domains';
-import chalk from 'chalk';
+import { defaultMarkdown as generateMarkdownForChannel, getChannelProtocols } from './utils/channels';
 import checkLicense from './checkLicense';
-import argv from 'minimist';
-import yaml from 'js-yaml';
-import { z } from 'zod';
 
-// AsyncAPI Parsers
-import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
-import path from 'path';
 import { EventType, MessageOperations } from './types';
 
 const parser = new Parser();
@@ -46,6 +49,7 @@ const optionsSchema = z.object({
     .optional(),
   debug: z.boolean().optional(),
   parseSchemas: z.boolean().optional(),
+  parseChannels: z.boolean().optional(),
   saveParsedSpecFile: z.boolean({ invalid_type_error: 'The saveParsedSpecFile is not a boolean in options' }).optional(),
 });
 
@@ -73,16 +77,12 @@ export default async (config: any, options: Props) => {
     writeQuery,
     getService,
     versionService,
-    rmService,
     getDomain,
     writeDomain,
     addServiceToDomain,
     getCommand,
     getEvent,
     getQuery,
-    rmEventById,
-    rmCommandById,
-    rmQueryById,
     versionCommand,
     versionEvent,
     versionQuery,
@@ -92,6 +92,9 @@ export default async (config: any, options: Props) => {
     addFileToService,
     versionDomain,
     getSpecificationFilesForService,
+    writeChannel,
+    getChannel,
+    versionChannel,
   } = utils(process.env.PROJECT_DIR);
 
   // Define the message operations mapping with proper types
@@ -100,28 +103,26 @@ export default async (config: any, options: Props) => {
       write: writeEvent,
       version: versionEvent,
       get: getEvent,
-      remove: rmEventById,
       addSchema: addSchemaToEvent,
     },
     command: {
       write: writeCommand,
       version: versionCommand,
       get: getCommand,
-      remove: rmCommandById,
       addSchema: addSchemaToCommand,
     },
     query: {
       write: writeQuery,
       version: versionQuery,
       get: getQuery,
-      remove: rmQueryById,
       addSchema: addSchemaToQuery,
     },
   };
 
   // Should the file that is written to the catalog be parsed (https://github.com/asyncapi/parser-js) or as it is?
   validateOptions(options);
-  const { services, saveParsedSpecFile = false, parseSchemas = true } = options;
+
+  const { services, saveParsedSpecFile = false, parseSchemas = true, parseChannels = false } = options;
   // const asyncAPIFiles = Array.isArray(options.path) ? options.path : [options.path];
   console.log(chalk.green(`Processing ${services.length} AsyncAPI files...`));
   for (const service of services) {
@@ -146,6 +147,7 @@ export default async (config: any, options: Props) => {
     }
 
     const operations = document.allOperations();
+    const channels = document.allChannels();
     const documentTags = document.info().tags().all() || [];
 
     const serviceId = service.id;
@@ -196,6 +198,59 @@ export default async (config: any, options: Props) => {
       await addServiceToDomain(domainId, { id: serviceId, version: version }, domainVersion);
     }
 
+    // Parse channels
+    if (parseChannels) {
+      for (const channel of channels) {
+        const channelAsJSON = channel.json();
+        const channelId = channel.id();
+        const params = channelAsJSON?.parameters || {};
+        const protocols = getChannelProtocols(channel);
+        const channelVersion = channel.extensions().get('x-eventcatalog-channel-version')?.value() || version;
+        let channelMarkdown = generateMarkdownForChannel(document, channel);
+
+        console.log(chalk.blue(`Processing channel: ${channelId} (v${channelVersion})`));
+
+        const paramsForCatalog = Object.keys(params).reduce(
+          (acc, key) => {
+            const param = params[key];
+            acc[key] = {};
+            if (param.enum) acc[key].enum = param.enum;
+            if (param.default) acc[key].default = param.default;
+            if (param.examples) acc[key].examples = param.examples;
+            if (param.description) acc[key].description = param.description;
+            return acc;
+          },
+          {} as Record<string, { enum?: string[]; default?: string; examples?: string[]; description?: string }>
+        );
+
+        const catalogedChannel = await getChannel(channelId, 'latest');
+
+        if (catalogedChannel) {
+          channelMarkdown = catalogedChannel.markdown;
+          if (catalogedChannel.version !== channelVersion) {
+            await versionChannel(channelId);
+            console.log(chalk.cyan(` - Versioned previous channel: ${channelId} (v${channelVersion})`));
+          }
+        }
+
+        await writeChannel(
+          {
+            id: channelId,
+            name: channelAsJSON?.title || channel.id(),
+            markdown: channelMarkdown,
+            version: channelVersion,
+            ...(Object.keys(paramsForCatalog).length > 0 && { parameters: paramsForCatalog }),
+            ...(channel.address() && { address: channel.address() }),
+            ...(channelAsJSON?.summary && { summary: channelAsJSON.summary }),
+            ...(protocols.length > 0 && { protocols }),
+          },
+          { override: true }
+        );
+
+        console.log(chalk.cyan(` - Message ${channelId} (v${version}) created`));
+      }
+    }
+
     // Find events/commands
     for (const operation of operations) {
       for (const message of operation.messages()) {
@@ -217,7 +272,6 @@ export default async (config: any, options: Props) => {
           write: writeMessage,
           version: versionMessage,
           get: getMessage,
-          remove: rmMessageById,
           addSchema: addSchemaToMessage,
         } = MESSAGE_OPERATIONS[eventType];
 
@@ -231,16 +285,17 @@ export default async (config: any, options: Props) => {
           const catalogedMessage = await getMessage(message.id().toLowerCase(), 'latest');
 
           if (catalogedMessage) {
+            // persist markdown if it exists
             messageMarkdown = catalogedMessage.markdown;
-            // if the version matches, we can override the message but keep markdown as it  was
-            if (catalogedMessage.version === messageVersion) {
-              await rmMessageById(messageId, messageVersion);
-            } else {
+
+            if (catalogedMessage.version !== messageVersion) {
               // if the version does not match, we need to version the message
               await versionMessage(messageId);
               console.log(chalk.cyan(` - Versioned previous message: (v${catalogedMessage.version})`));
             }
           }
+
+          const channelsForMessage = parseChannels ? getChannelsForMessage(message, channels, document) : [];
 
           // Write the message to the catalog
           await writeMessage(
@@ -252,8 +307,10 @@ export default async (config: any, options: Props) => {
               markdown: messageMarkdown,
               badges: badges.map((badge) => ({ content: badge.name(), textColor: 'blue', backgroundColor: 'blue' })),
               schemaPath: messageHasSchema(message) ? getSchemaFileName(message) : undefined,
+              ...(channelsForMessage.length > 0 && { channels: channelsForMessage }),
             },
             {
+              override: true,
               path: message.id(),
             }
           );
@@ -297,7 +354,7 @@ export default async (config: any, options: Props) => {
         console.log(chalk.cyan(` - Versioned previous service (v${latestServiceInCatalog.version})`));
       }
 
-      // Match found, override it
+      // Match found, persist data
       if (latestServiceInCatalog.version === version) {
         // we want to preserve the markdown any any spec files that are already there
         serviceMarkdown = latestServiceInCatalog.markdown;
@@ -305,27 +362,31 @@ export default async (config: any, options: Props) => {
         sends = latestServiceInCatalog.sends ? [...latestServiceInCatalog.sends, ...sends] : sends;
         receives = latestServiceInCatalog.receives ? [...latestServiceInCatalog.receives, ...receives] : receives;
         serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
-        await rmService(serviceId);
       }
     }
 
     const fileName = path.basename(service.path);
 
-    await writeService({
-      id: serviceId,
-      name: serviceName,
-      version: version,
-      summary: getServiceSummary(document),
-      badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
-      markdown: serviceMarkdown,
-      sends,
-      receives,
-      schemaPath: fileName || 'asyncapi.yml',
-      specifications: {
-        ...serviceSpecifications,
-        asyncapiPath: fileName || 'asyncapi.yml',
+    await writeService(
+      {
+        id: serviceId,
+        name: serviceName,
+        version: version,
+        summary: getServiceSummary(document),
+        badges: documentTags.map((tag) => ({ content: tag.name(), textColor: 'blue', backgroundColor: 'blue' })),
+        markdown: serviceMarkdown,
+        sends,
+        receives,
+        schemaPath: fileName || 'asyncapi.yml',
+        specifications: {
+          ...serviceSpecifications,
+          asyncapiPath: fileName || 'asyncapi.yml',
+        },
       },
-    });
+      {
+        override: true,
+      }
+    );
 
     // What files need added to the service (speficiation files)
     const specFiles = [

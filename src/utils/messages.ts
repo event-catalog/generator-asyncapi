@@ -1,4 +1,10 @@
-import { MessageInterface, AsyncAPIDocumentInterface } from '@asyncapi/parser';
+import {
+  MessageInterface,
+  AsyncAPIDocumentInterface,
+  ChannelInterface,
+  ChannelsInterface,
+  MessagesInterface,
+} from '@asyncapi/parser';
 import { getFileExtentionFromSchemaFormat } from './schemas';
 
 export const defaultMarkdown = (_document: AsyncAPIDocumentInterface, message: MessageInterface) => {
@@ -64,4 +70,40 @@ export const getSchemaFileName = (message: MessageInterface) => {
 
 export const getMessageName = (message: MessageInterface) => {
   return message.hasTitle() && message.title() ? (message.title() as string) : message.id();
+};
+
+export const getChannelsForMessage = (
+  message: MessageInterface,
+  channels: ChannelsInterface,
+  document: AsyncAPIDocumentInterface
+): { id: string; version: string }[] => {
+  let channelsForMessage: ChannelInterface[] = [];
+  const globalVersion = document.info().version();
+
+  // Go through all channels and link messages they document
+  for (const channel of channels) {
+    for (const channelMessage of channel.messages() as MessagesInterface) {
+      if (channelMessage.id() === message.id()) {
+        channelsForMessage.push(channel);
+      }
+    }
+  }
+
+  // You can also document a message directly to a channel, add them too
+  for (const messageChannel of message.channels()) {
+    channelsForMessage.push(messageChannel);
+  }
+
+  // Make them unique, as there may be overlapping channels
+  const uniqueChannels = channelsForMessage.filter(
+    (channel, index, self) => index === self.findIndex((t) => t.id() === channel.id())
+  );
+
+  return uniqueChannels.map((channel) => {
+    const channelVersion = channel.extensions().get('x-eventcatalog-channel-version')?.value() || globalVersion;
+    return {
+      id: channel.id(),
+      version: channelVersion,
+    };
+  });
 };
