@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.6.0
+
+### Minor Changes
+
+- 40b90c9: fix(plugin): added support for AsyncAPI v2 files, pub/sub messages now matched correctly
+
 ## 2.5.2
 
 ### Patch Changes
