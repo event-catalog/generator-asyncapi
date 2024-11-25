@@ -23,6 +23,8 @@
 - ⭐ Download your AsyncAPI files and message schemas form EventCatalog (e.g Avro, JSON) ([demo](https://demo.eventcatalog.dev/docs/events/InventoryAdjusted/0.0.4))
 - 💅 Custom MDX components ([read more](https://eventcatalog.dev/docs/development/components/using-components))
 - 🗄️ Auto versioning of your domains, services and messages
+- ⭐ [Document your channels and protocols](https://www.eventcatalog.dev/docs/development/plugins/async-api/features#mapping-channels-into-eventcatalog)
+- ⭐ [Document queries, commands and events with your AsyncAPI file using EventCatalog extensions](https://www.eventcatalog.dev/docs/development/plugins/async-api/features#mapping-messages-events-commands-or-queries)
 - ⭐ Discoverability feature (search, filter and more) ([demo](https://demo.eventcatalog.dev/discover/events))
 - ⭐ And much more...
 
