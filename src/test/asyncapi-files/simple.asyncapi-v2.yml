@@ -1,0 +1,21 @@
+asyncapi: 2.6.0
+info:
+  title: Account Service
+  version: 1.0.0
+
+channels:
+  chat:
+    publish:
+      operationId: messagePublished
+      message:
+        messageId: SomeCoolpublishedMessage
+        name: text
+        payload:
+          type: string
+    subscribe:
+      operationId: receiveMessage
+      message:
+        messageId: SomeCoolReceivedMessage
+        name: text
+        payload:
+          type: string

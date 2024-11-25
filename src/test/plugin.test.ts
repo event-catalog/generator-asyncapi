@@ -267,6 +267,7 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             { id: 'usersignedout', version: '1.0.0' },
           ]);
         });
+
         it('if the service is already defined and is sending messages these are persisted, messages are not duplicated in the list', async () => {
           const { writeService, getService } = utils(catalogDir);
 
@@ -291,6 +292,19 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             { id: 'usersignedout', version: '1.0.0' },
           ]);
         });
+
+        it('[AsyncApi 2.X] any message with the operation `publish` is added to the service. The service sends this message.', async () => {
+          const { getService } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi-v2.yml'), id: 'account-service' }],
+          });
+
+          const service = await getService('account-service', '1.0.0');
+
+          expect(service.sends).toHaveLength(1);
+          expect(service.sends).toEqual([{ id: 'somecoolpublishedmessage', version: '1.0.0' }]);
+        });
       });
 
       describe('receives', () => {
@@ -314,6 +328,19 @@ describe('AsyncAPI EventCatalog Plugin', () => {
             },
             { id: 'usersubscribed', version: '1.0.0' },
           ]);
+        });
+
+        it('[AsyncApi 2.X] any message with the operation `subscribe` is added to the service. The service receives this message.', async () => {
+          const { getService } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi-v2.yml'), id: 'account-service' }],
+          });
+
+          const service = await getService('account-service', '1.0.0');
+
+          expect(service.receives).toHaveLength(1);
+          expect(service.receives).toEqual([{ id: 'somecoolreceivedmessage', version: '1.0.0' }]);
         });
 
         it('if the service is already defined and is receiving messages these are persisted', async () => {
