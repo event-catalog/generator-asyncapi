@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.7.1
+
+### Patch Changes
+
+- 7f0e0ce: fix(plugin): set default value for plugin DIR
+
 ## 2.7.0
 
 ### Minor Changes
