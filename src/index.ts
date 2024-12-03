@@ -1,4 +1,4 @@
-import { AsyncAPIDocumentInterface, MessageInterface, Parser, fromFile, fromURL } from '@asyncapi/parser';
+import { AsyncAPIDocumentInterface, ChannelInterface, MessageInterface, Parser, fromFile, fromURL } from '@asyncapi/parser';
 import utils from '@eventcatalog/sdk';
 import { readFile } from 'node:fs/promises';
 import argv from 'minimist';
@@ -24,6 +24,7 @@ import { defaultMarkdown as generateMarkdownForChannel, getChannelProtocols } fr
 import checkLicense from './checkLicense';
 
 import { EventType, MessageOperations } from './types';
+import { ExtensionsMixinInterface } from '@asyncapi/parser/esm/models/mixins';
 
 const parser = new Parser();
 
@@ -205,6 +206,8 @@ export default async (config: any, options: Props) => {
     // Parse channels
     if (parseChannels) {
       for (const channel of channels) {
+        if (!isServiceChannelOwner(channel) || channel.messages().every((msg) => !isServiceMessageOwner(msg))) continue;
+
         const channelAsJSON = channel.json();
         const channelId = channel.id();
         const params = channelAsJSON?.parameters || {};
@@ -450,7 +453,11 @@ const getRawSpecFile = async (service: Service) => {
  *
  * default is provider (AsyncAPI file / service owns the message)
  */
-const isServiceMessageOwner = (message: MessageInterface): boolean => {
-  const value = message.extensions().get('x-eventcatalog-role')?.value() || 'provider';
+const isServiceMessageOwner = (message: MessageInterface): boolean => isServiceResourceOwner(message);
+
+const isServiceChannelOwner = (channel: ChannelInterface): boolean => isServiceResourceOwner(channel);
+
+const isServiceResourceOwner = (resource: ExtensionsMixinInterface): boolean => {
+  const value = resource.extensions().get('x-eventcatalog-role')?.value() || 'provider';
   return value === 'provider';
 };
