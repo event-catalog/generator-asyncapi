@@ -163,6 +163,9 @@ export default async (config: any, options: Props) => {
     let sends = [];
     let receives = [];
 
+    let owners = null;
+    let repository = null;
+
     let serviceSpecifications = {};
     let serviceSpecificationsFiles = [];
     let serviceMarkdown = generateMarkdownForService(document);
@@ -365,6 +368,8 @@ export default async (config: any, options: Props) => {
         serviceSpecifications = latestServiceInCatalog.specifications ?? {};
         sends = latestServiceInCatalog.sends ? [...latestServiceInCatalog.sends, ...sends] : sends;
         receives = latestServiceInCatalog.receives ? [...latestServiceInCatalog.receives, ...receives] : receives;
+        owners = latestServiceInCatalog.owners || ([] as any);
+        repository = latestServiceInCatalog.repository || null;
         serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
       }
     }
@@ -386,6 +391,8 @@ export default async (config: any, options: Props) => {
           ...serviceSpecifications,
           asyncapiPath: fileName || 'asyncapi.yml',
         },
+        ...(owners && { owners }),
+        ...(repository && { repository }),
       },
       {
         override: true,
