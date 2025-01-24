@@ -211,6 +211,53 @@ describe('AsyncAPI EventCatalog Plugin', () => {
         );
       });
 
+      it('when the AsyncAPI service is already defined in EventCatalog and the versions match, the owners and repo are persisted', async () => {
+        // Create a service with the same name and version as the AsyncAPI file for testing
+        const { writeService, getService } = utils(catalogDir);
+
+        await writeService({
+          id: 'account-service',
+          version: '1.0.0',
+          name: 'Random Name',
+          owners: ['dboyne'],
+          repository: {
+            language: 'typescript',
+            url: 'https://github.com/dboyne/eventcatalog',
+          },
+          markdown: 'Here is my original markdown, please do not override this!',
+        });
+
+        await plugin(config, { services: [{ path: join(asyncAPIExamplesDir, 'simple.asyncapi.yml'), id: 'account-service' }] });
+
+        const service = await getService('account-service', '1.0.0');
+        expect(service).toEqual(
+          expect.objectContaining({
+            id: 'account-service',
+            name: 'Account Service',
+            version: '1.0.0',
+            summary: 'This service is in charge of processing user signups',
+            owners: ['dboyne'],
+            repository: {
+              language: 'typescript',
+              url: 'https://github.com/dboyne/eventcatalog',
+            },
+            markdown: 'Here is my original markdown, please do not override this!',
+            badges: [
+              {
+                content: 'Events',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+              {
+                content: 'Authentication',
+                textColor: 'blue',
+                backgroundColor: 'blue',
+              },
+            ],
+          })
+        );
+      });
+
       it('when the AsyncAPI service is already defined in EventCatalog and the versions do not match, a new service is created and the old one is versioned', async () => {
         // Create a service with the same name and version as the AsyncAPI file for testing
         const { writeService, getService } = utils(catalogDir);

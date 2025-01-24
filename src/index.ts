@@ -163,6 +163,9 @@ export default async (config: any, options: Props) => {
     let sends = [];
     let receives = [];
 
+    let owners = null;
+    let repository = null;
+
     let serviceSpecifications = {};
     let serviceSpecificationsFiles = [];
     let serviceMarkdown = generateMarkdownForService(document);
@@ -352,6 +355,9 @@ export default async (config: any, options: Props) => {
 
     if (latestServiceInCatalog) {
       serviceMarkdown = latestServiceInCatalog.markdown;
+      owners = latestServiceInCatalog.owners || ([] as any);
+      repository = latestServiceInCatalog.repository || null;
+
       // Found a service, and versions do not match, we need to version the one already there
       if (latestServiceInCatalog.version !== version) {
         await versionService(serviceId);
@@ -386,6 +392,8 @@ export default async (config: any, options: Props) => {
           ...serviceSpecifications,
           asyncapiPath: fileName || 'asyncapi.yml',
         },
+        ...(owners && { owners }),
+        ...(repository && { repository }),
       },
       {
         override: true,
