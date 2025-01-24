@@ -355,6 +355,9 @@ export default async (config: any, options: Props) => {
 
     if (latestServiceInCatalog) {
       serviceMarkdown = latestServiceInCatalog.markdown;
+      owners = latestServiceInCatalog.owners || ([] as any);
+      repository = latestServiceInCatalog.repository || null;
+
       // Found a service, and versions do not match, we need to version the one already there
       if (latestServiceInCatalog.version !== version) {
         await versionService(serviceId);
@@ -368,8 +371,6 @@ export default async (config: any, options: Props) => {
         serviceSpecifications = latestServiceInCatalog.specifications ?? {};
         sends = latestServiceInCatalog.sends ? [...latestServiceInCatalog.sends, ...sends] : sends;
         receives = latestServiceInCatalog.receives ? [...latestServiceInCatalog.receives, ...receives] : receives;
-        owners = latestServiceInCatalog.owners || ([] as any);
-        repository = latestServiceInCatalog.repository || null;
         serviceSpecificationsFiles = await getSpecificationFilesForService(serviceId, version);
       }
     }
