@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.7.2
+
+### Patch Changes
+
+- 0c120fb: fix(plugin): owner and repo are now persisted between builds versions
+
 ## 2.7.1
 
 ### Patch Changes
