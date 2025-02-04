@@ -154,4 +154,4 @@ You can find the [contributing guidelines here](https://eventcatalog.dev/docs/co
 
 This project is governed by a [dual-license](./LICENSE.md). To ensure the sustainability of the project, you can freely make use of this software if your projects are Open Source. Otherwise for proprietary systems you must obtain a [commercial license](./LICENSE-COMMERCIAL.md).
 
-You can purchase a license at https://dashboard.eventcatalog.dev or email us at `hello@eventcatalog.dev`
+You can purchase a license or get a free trial at https://eventcatalog.cloud or email us at `hello@eventcatalog.dev`
