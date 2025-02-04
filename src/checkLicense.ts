@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import pkg from '../../package.json';
+import pkg from '../package.json';
 
 type LicenseResponse = {
   is_trial: boolean;
@@ -34,7 +34,6 @@ export default async (licenseKey?: string) => {
   if (response.status === 200) {
     const data = (await response.json()) as LicenseResponse;
 
-    // @ts-ignore
     if (pkg.name !== data.plugin) {
       console.log(chalk.bgRed(`\nInvalid license key for this plugin`));
       console.log(chalk.redBright('Please check your plugin license key or purchase a license at https://eventcatalog.cloud/'));
