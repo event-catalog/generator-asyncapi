@@ -32,6 +32,7 @@ parser.registerSchemaParser(AvroSchemaParser());
 const cliArgs = argv(process.argv.slice(2));
 
 const optionsSchema = z.object({
+  licenseKey: z.string().optional(),
   services: z.array(
     z.object({
       id: z.string({ required_error: 'The service id is required. please provide the service id' }),
@@ -73,6 +74,8 @@ export default async (config: any, options: Props) => {
   if (!process.env.PROJECT_DIR) {
     throw new Error('Please provide catalog url (env variable PROJECT_DIR)');
   }
+
+  await checkLicense(options.licenseKey);
 
   const {
     writeService,
@@ -425,8 +428,6 @@ export default async (config: any, options: Props) => {
 
     console.log(chalk.green(`\nFinished generating event catalog for AsyncAPI ${serviceId} (v${version})`));
   }
-
-  await checkLicense();
 };
 
 const getParsedSpecFile = (service: Service, document: AsyncAPIDocumentInterface) => {

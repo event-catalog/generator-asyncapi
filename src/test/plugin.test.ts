@@ -4,12 +4,17 @@ import plugin from '../index';
 import { join } from 'node:path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-
+import { vi } from 'vitest';
 // Fake eventcatalog config
 const config = {};
 
 let catalogDir: string;
 const asyncAPIExamplesDir = join(__dirname, 'asyncapi-files');
+
+// Add mock for the local checkLicense module
+vi.mock('../checkLicense', () => ({
+  default: () => Promise.resolve(),
+}));
 
 describe('AsyncAPI EventCatalog Plugin', () => {
   describe('service generation', () => {
