@@ -1,5 +1,11 @@
 # @eventcatalog/sdk
 
+## 2.7.3
+
+### Patch Changes
+
+- 8e1b041: chore(plugin): added checks for license
+
 ## 2.7.2
 
 ### Patch Changes
