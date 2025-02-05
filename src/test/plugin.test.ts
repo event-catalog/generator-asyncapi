@@ -1054,6 +1054,19 @@ describe('AsyncAPI EventCatalog Plugin', () => {
           expect(versionedChannel).toBeDefined();
           expect(newChannel).toBeDefined();
         });
+
+        it('if the channel messages are not owned by service dont create channel', async () => {
+          const { getChannel } = utils(catalogDir);
+
+          await plugin(config, {
+            services: [{ path: join(asyncAPIExamplesDir, 'streetlights-kafka-asyncapi.yml'), id: 'streetlights-service' }],
+            parseChannels: true,
+          });
+
+          const channel = await getChannel('streetTrafic');
+
+          expect(channel).not.toBeDefined();
+        });
       });
     });
 

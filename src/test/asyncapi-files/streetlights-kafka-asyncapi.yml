@@ -73,6 +73,17 @@ channels:
     messages:
       dimLight:
         $ref: '#/components/messages/dimLight'
+  streetTrafic:
+    x-eventcatalog-channel-version: 2.0.0
+    messages:
+      blockedByTrafic:
+        $ref: '#/components/messages/blockedByTrafic'
+  trafickLightMaintanance:
+    x-eventcatalog-channel-version: 2.0.0
+    x-eventcatalog-role: client
+    messages:
+      traficLightBroken:
+        $ref: '#/components/messages/traficLightBroken'
 operations:
   receiveLightMeasurement:
     action: receive
@@ -138,6 +149,17 @@ components:
         - $ref: '#/components/messageTraits/commonHeaders'
       payload:
         $ref: '#/components/schemas/dimLightPayload'
+    blockedByTrafic:
+      name: blockedByTrafic
+      title: Street Blocked By Trafic
+      x-eventcatalog-role: client
+    traficLightBroken:
+      name: traficLightBroken
+      title: Street Trafic Light Broken
+      payload:
+        sendAt:
+          $ref: '#/components/schemas/sentAt'
+
   schemas:
     lightMeasuredPayload:
       type: object
